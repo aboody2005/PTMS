@@ -1,0 +1,69 @@
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-w); background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  z-index: 50; transition: transform var(--transition);
+}
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 49; }
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  padding: 20px 20px 16px; font-size: 1.2rem; font-weight: 700;
+  border-bottom: 1px solid var(--border-light);
+}
+.logoIcon { font-size: 1.5rem; }
+.userCard {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px; margin: 12px 12px 8px;
+  background: var(--bg-hover); border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+}
+.avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--accent-dim); display: flex; align-items: center; justify-content: center;
+  font-weight: 600; color: var(--accent); flex-shrink: 0; font-size: 1rem;
+  overflow: hidden;
+}
+.userInfo { overflow: hidden; }
+.userName { font-size: 0.875rem; font-weight: 600; truncate: true; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav { flex: 1; padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+.navItem {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  font-size: 0.875rem; font-weight: 500;
+  color: var(--text-secondary); transition: all var(--transition);
+}
+.navItem:hover { background: var(--bg-hover); color: var(--text-primary); }
+.navItem.active { background: var(--accent-dim); color: var(--accent); }
+.navIcon { font-size: 1.1rem; width: 20px; text-align: center; }
+.bottom { padding: 16px 12px; border-top: 1px solid var(--border-light); }
+.logoutBtn {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  background: none; border: none; color: var(--text-secondary);
+  font-size: 0.875rem; font-weight: 500; transition: all var(--transition); text-align: left;
+}
+.logoutBtn:hover { background: var(--red-dim); color: var(--red); }
+
+:global(html[dir="rtl"]) .sidebar {
+  left: auto;
+  right: 0;
+  border-right: none;
+  border-left: 1px solid var(--border);
+}
+
+:global(html[dir="rtl"]) .logoutBtn {
+  text-align: right;
+}
+
+@media (max-width: 1024px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+
+  :global(html[dir="rtl"]) .sidebar {
+    transform: translateX(100%);
+  }
+  :global(html[dir="rtl"]) .sidebar.open {
+    transform: translateX(0);
+  }
+}

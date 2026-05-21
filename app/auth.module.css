@@ -1,0 +1,46 @@
+/* Shared auth page styles */
+.authWrapper {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 24px; position: relative; overflow: hidden;
+  background: var(--bg-primary);
+}
+.authGlow {
+  position: absolute; top: 30%; left: 50%; transform: translate(-50%,-50%);
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.authCard {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 40px;
+  width: 100%; max-width: 440px;
+  box-shadow: var(--shadow);
+  position: relative; z-index: 1;
+  animation: slideUp 0.3s ease;
+}
+.authCardWide { max-width: 640px; }
+.authHeader { text-align: center; margin-bottom: 28px; }
+.authLogo {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 1.3rem; font-weight: 700; color: var(--accent);
+  margin-bottom: 20px;
+}
+.authHeader h1 { font-size: 1.6rem; margin-bottom: 6px; }
+.authHeader p { color: var(--text-secondary); font-size: 0.9rem; }
+.forgotRow { text-align: right; margin-bottom: 20px; margin-top: -10px; }
+.forgotLink { color: var(--accent); font-size: 0.85rem; }
+.forgotLink:hover { text-decoration: underline; }
+.submitBtn { margin-top: 4px; justify-content: center; height: 44px; }
+.authSwitch { text-align: center; margin-top: 24px; font-size: 0.875rem; color: var(--text-secondary); }
+.authSwitch a { color: var(--accent); font-weight: 500; }
+.authSwitch a:hover { text-decoration: underline; }
+.demoSection { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-light); text-align: center; }
+.demoSection p { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px; }
+.demoBtns { display: flex; gap: 8px; justify-content: center; }
+
+@media (max-width: 480px) {
+  .authCard {
+    padding: 24px 16px;
+  }
+}
+
