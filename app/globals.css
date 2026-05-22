@@ -53,10 +53,14 @@
 
 /* ── Reset ─────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<<<<<<< HEAD
 html, body {
   overflow-x: hidden;
   max-width: 100%;
 }
+=======
+html { scroll-behavior: smooth; }
+>>>>>>> 8366b31fea862c2e1c8adb0342f46b7d399361bd
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg-primary);
@@ -171,7 +175,11 @@ tr:hover td { background: var(--bg-hover); }
 .badge-error { background: var(--red-dim); color: var(--red); }
 
 /* ── Layout ────────────────────────────────────────────────── */
+<<<<<<< HEAD
 .dashboard-layout { display: flex; min-height: 100vh; overflow-x: hidden; max-width: 100%; }
+=======
+.dashboard-layout { display: flex; min-height: 100vh; }
+>>>>>>> 8366b31fea862c2e1c8adb0342f46b7d399361bd
 .dashboard-main {
   flex: 1; margin-left: var(--sidebar-w);
   display: flex; flex-direction: column; min-height: 100vh;

@@ -3,7 +3,11 @@
   width: var(--sidebar-w); background: var(--bg-secondary);
   border-right: 1px solid var(--border);
   display: flex; flex-direction: column;
+<<<<<<< HEAD
   z-index: 50; transition: transform var(--transition), visibility var(--transition);
+=======
+  z-index: 50; transition: transform var(--transition);
+>>>>>>> 8366b31fea862c2e1c8adb0342f46b7d399361bd
 }
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 49; }
 .logo {
@@ -57,6 +61,7 @@
 }
 
 @media (max-width: 1024px) {
+<<<<<<< HEAD
   .sidebar { transform: translateX(-100%); visibility: hidden; }
   .sidebar.open { transform: translateX(0); visibility: visible; }
 
@@ -73,5 +78,15 @@
   .sidebar {
     width: 250px;
     max-width: 80vw;
+=======
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+
+  :global(html[dir="rtl"]) .sidebar {
+    transform: translateX(100%);
+  }
+  :global(html[dir="rtl"]) .sidebar.open {
+    transform: translateX(0);
+>>>>>>> 8366b31fea862c2e1c8adb0342f46b7d399361bd
   }
 }
