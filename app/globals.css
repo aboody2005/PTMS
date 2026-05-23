@@ -328,7 +328,7 @@ tr:hover td { background: var(--bg-hover); }
   h1 { font-size: 1.75rem; }
   h2 { font-size: 1.5rem; }
 }
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .flex-responsive {
     flex-direction: column;
     align-items: stretch;

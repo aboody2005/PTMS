@@ -10,6 +10,11 @@ export const metadata = {
   keywords: 'pharmacy training, student management, Iraq pharmacy, training system',
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en" data-theme="dark" suppressHydrationWarning>

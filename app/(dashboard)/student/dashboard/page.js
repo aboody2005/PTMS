@@ -101,9 +101,9 @@ export default function StudentDashboard() {
                 { label: t('universityLabel'), val: student?.university || (locale === 'ar' ? 'غير محدد' : 'Not set') },
                 { label: locale === 'ar' ? 'الصيدلية' : 'Pharmacy', val: student?.pharmacyName || (locale === 'ar' ? 'غير محدد' : 'Not set') },
               ].map(({ label, val }) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--border-light)', fontSize: '0.85rem' }}>
-                  <span className="text-muted">{label}</span>
-                  <span style={{ fontWeight: 500, maxWidth: '160px', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{val}</span>
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--border-light)', fontSize: '0.85rem', gap: 12 }}>
+                  <span className="text-muted" style={{ flexShrink: 0 }}>{label}</span>
+                  <span style={{ fontWeight: 500, maxWidth: '60%', textAlign: locale === 'ar' ? 'left' : 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={val}>{val}</span>
                 </div>
               ))}
             </div>
