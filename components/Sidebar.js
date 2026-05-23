@@ -37,51 +37,53 @@ export default function Sidebar({ mobileOpen, onClose }) {
   return (
     <>
       {mobileOpen && <div className={styles.overlay} onClick={onClose} />}
-      <aside className={`${styles.sidebar} ${mobileOpen ? styles.open : ''}`}>
-        {/* Logo */}
-        <div className={styles.logo}>
-          <span className={styles.logoIcon}>⚕️</span>
-          <span>PTMS</span>
-        </div>
-
-        {/* User info */}
-        <div className={styles.userCard}>
-          <div className={`avatar avatar-md ${styles.avatar}`}>
-            {user?.profileImage
-              ? <img src={user.profileImage} alt={user.name} style={{width:'100%',height:'100%',borderRadius:'50%',objectFit:'cover'}} />
-              : user?.name?.charAt(0).toUpperCase()
-            }
+      <div className={styles.sidebarWrapper}>
+        <aside className={`${styles.sidebar} ${mobileOpen ? styles.open : ''}`}>
+          {/* Logo */}
+          <div className={styles.logo}>
+            <span className={styles.logoIcon}>⚕️</span>
+            <span>PTMS</span>
           </div>
-          <div className={styles.userInfo}>
-            <p className={styles.userName}>{user?.name}</p>
-            <span className={`badge badge-${user?.role === 'admin' ? 'error' : user?.role === 'teacher' ? 'info' : 'success'}`}>
-              {t(userRoleKey)}
-            </span>
+
+          {/* User info */}
+          <div className={styles.userCard}>
+            <div className={`avatar avatar-md ${styles.avatar}`}>
+              {user?.profileImage
+                ? <img src={user.profileImage} alt={user.name} style={{width:'100%',height:'100%',borderRadius:'50%',objectFit:'cover'}} />
+                : user?.name?.charAt(0).toUpperCase()
+              }
+            </div>
+            <div className={styles.userInfo}>
+              <p className={styles.userName}>{user?.name}</p>
+              <span className={`badge badge-${user?.role === 'admin' ? 'error' : user?.role === 'teacher' ? 'info' : 'success'}`}>
+                {t(userRoleKey)}
+              </span>
+            </div>
           </div>
-        </div>
 
-        {/* Nav */}
-        <nav className={styles.nav}>
-          {items.map(({ href, icon, labelKey }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`${styles.navItem} ${pathname === href ? styles.active : ''}`}
-              onClick={onClose}
-            >
-              <span className={styles.navIcon}>{icon}</span>
-              <span>{t(labelKey)}</span>
-            </Link>
-          ))}
-        </nav>
+          {/* Nav */}
+          <nav className={styles.nav}>
+            {items.map(({ href, icon, labelKey }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`${styles.navItem} ${pathname === href ? styles.active : ''}`}
+                onClick={onClose}
+              >
+                <span className={styles.navIcon}>{icon}</span>
+                <span>{t(labelKey)}</span>
+              </Link>
+            ))}
+          </nav>
 
-        {/* Bottom */}
-        <div className={styles.bottom}>
-          <button onClick={logout} className={styles.logoutBtn}>
-            <span>🚪</span> {t('navLogout')}
-          </button>
-        </div>
-      </aside>
+          {/* Bottom */}
+          <div className={styles.bottom}>
+            <button onClick={logout} className={styles.logoutBtn}>
+              <span>🚪</span> {t('navLogout')}
+            </button>
+          </div>
+        </aside>
+      </div>
     </>
   );
 }

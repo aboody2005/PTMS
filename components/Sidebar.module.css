@@ -1,9 +1,27 @@
-.sidebar {
+.sidebarWrapper {
   position: fixed; top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-w);
+  z-index: 50;
+  overflow: hidden;
+  pointer-events: none;
+}
+:global(html[dir="rtl"]) .sidebarWrapper {
+  left: auto;
+  right: 0;
+}
+@media (max-width: 1024px) {
+  .sidebarWrapper {
+    width: 100vw;
+  }
+}
+
+.sidebar {
+  position: absolute; top: 0; left: 0; bottom: 0;
   width: var(--sidebar-w); background: var(--bg-secondary);
   border-right: 1px solid var(--border);
   display: flex; flex-direction: column;
   z-index: 50; transition: transform var(--transition), visibility var(--transition);
+  pointer-events: auto;
 }
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 49; }
 .logo {
