@@ -90,11 +90,22 @@
 .footerLinks a { color: var(--text-secondary); font-size: 0.875rem; transition: color var(--transition); }
 .footerLinks a:hover { color: var(--accent); }
 
+.mobileNavBtns {
+  display: none;
+}
+.desktopNavBtns {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .navLinks { display: none; }
-  .navLinks.open { display: flex; flex-direction: column; position: absolute; top: 64px; left: 0; right: 0; background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 20px 24px; gap: 16px; }
+  .navLinks.open { display: flex; flex-direction: column; position: absolute; top: 64px; left: 0; right: 0; background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 20px 24px; gap: 16px; box-shadow: var(--shadow); }
   .menuBtn { display: block; }
+  .desktopNavBtns { display: none; }
+  .mobileNavBtns { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; border-top: 1px solid var(--border-light); padding-top: 16px; }
   .heroStats { gap: 24px; }
   .footerInner { flex-direction: column; text-align: center; }
 }

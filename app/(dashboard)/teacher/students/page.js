@@ -193,7 +193,7 @@ export default function TeacherStudents() {
               <button onClick={() => setSelected(null)} className="btn btn-icon btn-secondary">✕</button>
             </div>
             <div className="modal-body">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16, fontSize: '0.875rem' }}>
+              <div className="grid grid-2" style={{ gap: 12, marginBottom: 16, fontSize: '0.875rem' }}>
                 {[
                   [locale === 'ar' ? 'الطالب' : 'Student', selected.userId?.name || '—'],
                   [locale === 'ar' ? 'الهاتف' : 'Phone', selected.userId?.phone || '—'],

@@ -37,9 +37,13 @@ export default function HomePage() {
             <span>{t('brandName')}</span>
           </Link>
           <div className={`${styles.navLinks} ${menuOpen ? styles.open : ''}`}>
-            <a href="#about">{t('navAbout')}</a>
-            <a href="#features">{t('navFeatures')}</a>
-            <a href="#contact">{t('navContact')}</a>
+            <a href="#about" onClick={() => setMenuOpen(false)}>{t('navAbout')}</a>
+            <a href="#features" onClick={() => setMenuOpen(false)}>{t('navFeatures')}</a>
+            <a href="#contact" onClick={() => setMenuOpen(false)}>{t('navContact')}</a>
+            <div className={styles.mobileNavBtns}>
+              <Link href="/login" className="btn btn-secondary w-full" style={{ justifyContent: 'center' }} onClick={() => setMenuOpen(false)}>{t('navLogin')}</Link>
+              <Link href="/register" className="btn btn-primary w-full" style={{ justifyContent: 'center' }} onClick={() => setMenuOpen(false)}>{t('navRegister')}</Link>
+            </div>
           </div>
           <div className={styles.navActions}>
             <button className={styles.langBtnHome} onClick={toggleLanguage} title={locale === 'en' ? 'Translate to Arabic' : 'ترجمة إلى الإنجليزية'}>
@@ -49,8 +53,10 @@ export default function HomePage() {
             <button className={styles.themeBtn} onClick={toggleTheme} title="Toggle theme">
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
-            <Link href="/login" className="btn btn-secondary btn-sm">{t('navLogin')}</Link>
-            <Link href="/register" className="btn btn-primary btn-sm">{t('navRegister')}</Link>
+            <div className={styles.desktopNavBtns}>
+              <Link href="/login" className="btn btn-secondary btn-sm">{t('navLogin')}</Link>
+              <Link href="/register" className="btn btn-primary btn-sm">{t('navRegister')}</Link>
+            </div>
             <button className={styles.menuBtn} onClick={() => setMenuOpen(!menuOpen)}>☰</button>
           </div>
         </div>

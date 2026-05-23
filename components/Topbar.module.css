@@ -7,7 +7,15 @@
 }
 .left { display: flex; align-items: center; gap: 16px; }
 .menuBtn { display: none; background: none; border: none; font-size: 1.4rem; color: var(--text-primary); }
-.title { font-size: 1rem; font-weight: 600; color: var(--text-primary); }
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
 .right { display: flex; align-items: center; gap: 8px; }
 .iconBtn {
   position: relative; background: none; border: 1px solid var(--border);
@@ -68,7 +76,16 @@
 .notifTime { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
 .empty { text-align: center; color: var(--text-muted); padding: 24px; font-size: 0.875rem; }
 @media (max-width: 1024px) { .menuBtn { display: block; } }
-@media (max-width: 480px) { .dropdown { width: 300px; right: -8px; } }
+@media (max-width: 480px) {
+  .dropdown {
+    width: 290px;
+    right: -12px;
+  }
+  :global(html[dir="rtl"]) .dropdown {
+    right: auto;
+    left: -12px;
+  }
+}
 
 :global(html[dir="rtl"]) .dropdown {
   right: auto;
@@ -87,6 +104,7 @@
   }
   .title {
     font-size: 0.9rem;
+    max-width: 140px;
   }
 }
 
