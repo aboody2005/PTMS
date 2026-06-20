@@ -150,10 +150,20 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- ============================================================
--- ROW LEVEL SECURITY (RLS)
--- We disable RLS since our API routes use the service_role key
--- which bypasses RLS. This is the simplest approach for
--- server-side-only data access.
+-- HELPER: is_admin() — checks if the current user is admin
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'admin' AND is_active = TRUE
+  );
+$$ LANGUAGE sql STABLE SECURITY DEFINER;
+
+-- ============================================================
+-- ROW LEVEL SECURITY (RLS) — Per-role policies
+-- The browser client uses the anon key; RLS enforces access.
+-- The server admin client (service_role) bypasses RLS entirely.
 -- ============================================================
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE students ENABLE ROW LEVEL SECURITY;
@@ -163,27 +173,212 @@ ALTER TABLE visits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 
--- Allow service_role full access (API routes use this)
+-- ── PROFILES ────────────────────────────────────────────────
+-- Drop old blanket policies
 DROP POLICY IF EXISTS "Service role full access" ON profiles;
-CREATE POLICY "Service role full access" ON profiles FOR ALL USING (true) WITH CHECK (true);
 
+-- Any authenticated user can read any active profile
+-- (needed for teachers to see student names, admin to see everyone)
+DROP POLICY IF EXISTS "Authenticated users read profiles" ON profiles;
+CREATE POLICY "Authenticated users read profiles" ON profiles
+  FOR SELECT
+  USING (auth.uid() IS NOT NULL);
+
+-- Users can update their own profile
+DROP POLICY IF EXISTS "Users update own profile" ON profiles;
+CREATE POLICY "Users update own profile" ON profiles
+  FOR UPDATE
+  USING (id = auth.uid())
+  WITH CHECK (id = auth.uid());
+
+-- Admin can update any profile
+DROP POLICY IF EXISTS "Admin update any profile" ON profiles;
+CREATE POLICY "Admin update any profile" ON profiles
+  FOR UPDATE
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+-- Admin can insert profiles (handled by trigger, but needed for direct inserts)
+DROP POLICY IF EXISTS "Admin insert profiles" ON profiles;
+CREATE POLICY "Admin insert profiles" ON profiles
+  FOR INSERT
+  WITH CHECK (public.is_admin());
+
+-- Admin can delete profiles
+DROP POLICY IF EXISTS "Admin delete profiles" ON profiles;
+CREATE POLICY "Admin delete profiles" ON profiles
+  FOR DELETE
+  USING (public.is_admin());
+
+-- ── STUDENTS ────────────────────────────────────────────────
 DROP POLICY IF EXISTS "Service role full access" ON students;
-CREATE POLICY "Service role full access" ON students FOR ALL USING (true) WITH CHECK (true);
 
+-- Students can read their own record
+DROP POLICY IF EXISTS "Student reads own record" ON students;
+CREATE POLICY "Student reads own record" ON students
+  FOR SELECT
+  USING (user_id = auth.uid());
+
+-- Teachers can read students assigned to them
+DROP POLICY IF EXISTS "Teacher reads assigned students" ON students;
+CREATE POLICY "Teacher reads assigned students" ON students
+  FOR SELECT
+  USING (teacher_id = auth.uid());
+
+-- Admin can read all students
+DROP POLICY IF EXISTS "Admin reads all students" ON students;
+CREATE POLICY "Admin reads all students" ON students
+  FOR SELECT
+  USING (public.is_admin());
+
+-- Students can update their own record (university, pharmacyName, location, lat/lng)
+DROP POLICY IF EXISTS "Student updates own record" ON students;
+CREATE POLICY "Student updates own record" ON students
+  FOR UPDATE
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+-- Teachers can update students assigned to them (e.g. status after visit)
+DROP POLICY IF EXISTS "Teacher updates assigned student" ON students;
+CREATE POLICY "Teacher updates assigned student" ON students
+  FOR UPDATE
+  USING (teacher_id = auth.uid())
+  WITH CHECK (teacher_id = auth.uid());
+
+-- Admin can update all students
+DROP POLICY IF EXISTS "Admin updates all students" ON students;
+CREATE POLICY "Admin updates all students" ON students
+  FOR UPDATE
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+-- Admin can insert students
+DROP POLICY IF EXISTS "Admin inserts students" ON students;
+CREATE POLICY "Admin inserts students" ON students
+  FOR INSERT
+  WITH CHECK (public.is_admin());
+
+-- ── TEACHERS ────────────────────────────────────────────────
 DROP POLICY IF EXISTS "Service role full access" ON teachers;
-CREATE POLICY "Service role full access" ON teachers FOR ALL USING (true) WITH CHECK (true);
 
+-- Any authenticated user can read teachers (needed for dropdowns)
+DROP POLICY IF EXISTS "Authenticated read teachers" ON teachers;
+CREATE POLICY "Authenticated read teachers" ON teachers
+  FOR SELECT
+  USING (auth.uid() IS NOT NULL);
+
+-- Teachers can update their own record
+DROP POLICY IF EXISTS "Teacher updates own record" ON teachers;
+CREATE POLICY "Teacher updates own record" ON teachers
+  FOR UPDATE
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+-- Admin can manage all teacher records
+DROP POLICY IF EXISTS "Admin manages teachers" ON teachers;
+CREATE POLICY "Admin manages teachers" ON teachers
+  FOR ALL
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+-- ── LOCATIONS ───────────────────────────────────────────────
 DROP POLICY IF EXISTS "Service role full access" ON locations;
-CREATE POLICY "Service role full access" ON locations FOR ALL USING (true) WITH CHECK (true);
 
+-- Any authenticated user can read active locations (for dropdowns/forms)
+DROP POLICY IF EXISTS "Authenticated read locations" ON locations;
+CREATE POLICY "Authenticated read locations" ON locations
+  FOR SELECT
+  USING (auth.uid() IS NOT NULL);
+
+-- Only admin can write locations
+DROP POLICY IF EXISTS "Admin manages locations" ON locations;
+CREATE POLICY "Admin manages locations" ON locations
+  FOR ALL
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+-- ── VISITS ──────────────────────────────────────────────────
 DROP POLICY IF EXISTS "Service role full access" ON visits;
-CREATE POLICY "Service role full access" ON visits FOR ALL USING (true) WITH CHECK (true);
 
+-- Students can read their own visits (via student_id)
+DROP POLICY IF EXISTS "Student reads own visits" ON visits;
+CREATE POLICY "Student reads own visits" ON visits
+  FOR SELECT
+  USING (
+    student_id IN (
+      SELECT id FROM public.students WHERE user_id = auth.uid()
+    )
+  );
+
+-- Teachers can read visits they recorded
+DROP POLICY IF EXISTS "Teacher reads own visits" ON visits;
+CREATE POLICY "Teacher reads own visits" ON visits
+  FOR SELECT
+  USING (teacher_id = auth.uid());
+
+-- Admin can read all visits
+DROP POLICY IF EXISTS "Admin reads all visits" ON visits;
+CREATE POLICY "Admin reads all visits" ON visits
+  FOR SELECT
+  USING (public.is_admin());
+
+-- Teachers can insert visits (record a visit)
+DROP POLICY IF EXISTS "Teacher inserts visit" ON visits;
+CREATE POLICY "Teacher inserts visit" ON visits
+  FOR INSERT
+  WITH CHECK (teacher_id = auth.uid());
+
+-- Admin can insert/update/delete visits
+DROP POLICY IF EXISTS "Admin manages visits" ON visits;
+CREATE POLICY "Admin manages visits" ON visits
+  FOR ALL
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+-- ── NOTIFICATIONS ────────────────────────────────────────────
 DROP POLICY IF EXISTS "Service role full access" ON notifications;
-CREATE POLICY "Service role full access" ON notifications FOR ALL USING (true) WITH CHECK (true);
 
+-- Users can read their own notifications
+DROP POLICY IF EXISTS "User reads own notifications" ON notifications;
+CREATE POLICY "User reads own notifications" ON notifications
+  FOR SELECT
+  USING (user_id = auth.uid());
+
+-- Users can update their own notifications (mark as read)
+DROP POLICY IF EXISTS "User updates own notifications" ON notifications;
+CREATE POLICY "User updates own notifications" ON notifications
+  FOR UPDATE
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+-- Any authenticated user can insert a notification (teachers notify students)
+DROP POLICY IF EXISTS "Authenticated insert notification" ON notifications;
+CREATE POLICY "Authenticated insert notification" ON notifications
+  FOR INSERT
+  WITH CHECK (auth.uid() IS NOT NULL);
+
+-- Admin can manage all notifications
+DROP POLICY IF EXISTS "Admin manages notifications" ON notifications;
+CREATE POLICY "Admin manages notifications" ON notifications
+  FOR ALL
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+-- ── SETTINGS ────────────────────────────────────────────────
 DROP POLICY IF EXISTS "Service role full access" ON settings;
-CREATE POLICY "Service role full access" ON settings FOR ALL USING (true) WITH CHECK (true);
+
+-- Any authenticated user can read settings
+DROP POLICY IF EXISTS "Authenticated read settings" ON settings;
+CREATE POLICY "Authenticated read settings" ON settings
+  FOR SELECT
+  USING (auth.uid() IS NOT NULL);
+
+-- Only admin can write settings
+DROP POLICY IF EXISTS "Admin manages settings" ON settings;
+CREATE POLICY "Admin manages settings" ON settings
+  FOR ALL
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
 
 -- ============================================================
 -- UPDATED_AT AUTO-UPDATE FUNCTION
@@ -238,3 +433,56 @@ GRANT SELECT, UPDATE, USAGE ON ALL SEQUENCES IN SCHEMA public TO authenticated, 
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres, service_role;
+
+-- ============================================================
+-- EXTENSIONS, TRIGGERS & RPC FOR SERVERLESS MIGRATION
+-- ============================================================
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- 1. Trigger to delete auth.users when a profile is deleted
+CREATE OR REPLACE FUNCTION public.handle_deleted_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  DELETE FROM auth.users WHERE id = OLD.id;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_profile_deleted ON public.profiles;
+CREATE TRIGGER on_profile_deleted
+  AFTER DELETE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.handle_deleted_user();
+
+-- 2. RPC function to reset password using token
+CREATE OR REPLACE FUNCTION public.reset_password_with_token(p_token TEXT, p_password TEXT)
+RETURNS BOOLEAN AS $$
+DECLARE
+  v_user_id UUID;
+BEGIN
+  -- Find profile by token and verify it hasn't expired
+  SELECT id INTO v_user_id
+  FROM public.profiles
+  WHERE reset_token = p_token
+    AND reset_token_expiry > NOW()
+  LIMIT 1;
+
+  IF v_user_id IS NULL THEN
+    RETURN FALSE;
+  END IF;
+
+  -- Update password in auth.users
+  UPDATE auth.users
+  SET encrypted_password = crypt(p_password, gen_salt('bf', 10))
+  WHERE id = v_user_id;
+
+  -- Clear reset token in profiles
+  UPDATE public.profiles
+  SET reset_token = NULL,
+      reset_token_expiry = NULL
+  WHERE id = v_user_id;
+
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+

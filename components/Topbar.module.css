@@ -1,35 +1,47 @@
 .topbar {
   position: sticky; top: 0; z-index: 40;
-  height: var(--header-h); background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
+  height: var(--header-h);
+  background: color-mix(in srgb, var(--bg-secondary) 85%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-light);
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 24px; gap: 16px;
+  padding: 0 32px; gap: 16px;
+  box-shadow: var(--shadow-sm);
 }
 .left { display: flex; align-items: center; gap: 16px; }
-.menuBtn { display: none; background: none; border: none; font-size: 1.4rem; color: var(--text-primary); }
+.menuBtn { display: none; background: none; border: none; font-size: 1.4rem; color: var(--text-primary); transition: transform var(--transition); }
+.menuBtn:hover { transform: scale(1.1); }
 .title {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.1rem;
+  font-weight: 700;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 280px;
+  max-width: 320px;
+  letter-spacing: -0.01em;
 }
-.right { display: flex; align-items: center; gap: 8px; }
+.right { display: flex; align-items: center; gap: 10px; }
 .iconBtn {
-  position: relative; background: none; border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 8px 10px; font-size: 1rem;
-  color: var(--text-primary) !important; transition: background var(--transition);
+  position: relative; background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 8px 11px; font-size: 1rem;
+  color: var(--text-primary) !important; transition: all var(--transition);
+  display: inline-flex; align-items: center; justify-content: center;
 }
-.iconBtn:hover { background: var(--bg-hover); }
+.iconBtn:hover {
+  background: var(--bg-hover);
+  border-color: var(--text-secondary);
+  transform: translateY(-1px);
+}
+.iconBtn:active { transform: translateY(0); }
+
 .langBtn {
   position: relative;
   background: var(--accent-dim);
   border: 1px solid var(--accent);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  font-size: 0.85rem;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--accent) !important;
   transition: all var(--transition);
@@ -38,73 +50,82 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 0 8px rgba(0, 212, 255, 0.1);
+  box-shadow: 0 0 10px rgba(0, 210, 196, 0.08);
 }
 .langBtn:hover {
   background: var(--accent);
-  color: #0d1117 !important;
-  box-shadow: 0 0 12px rgba(0, 212, 255, 0.3);
-  transform: translateY(-1px);
+  color: #080c16 !important;
+  box-shadow: 0 4px 14px rgba(0, 210, 196, 0.25);
+  transform: translateY(-1.5px);
 }
+.langBtn:active { transform: translateY(0); }
+
 .badge {
   position: absolute; top: -4px; right: -4px;
   background: var(--red); color: #fff;
-  border-radius: 50%; width: 16px; height: 16px;
-  font-size: 0.65rem; font-weight: 700;
+  border-radius: 50%; width: 18px; height: 18px;
+  font-size: 0.65rem; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 2px var(--bg-secondary);
 }
 .notifWrapper { position: relative; }
 .dropdown {
-  position: absolute; top: calc(100% + 8px); right: 0;
-  width: 340px; background: var(--bg-card);
+  position: absolute; top: calc(100% + 10px); right: 0;
+  width: 360px; background: var(--bg-card);
   border: 1px solid var(--border); border-radius: var(--radius);
   box-shadow: var(--shadow); z-index: 200; overflow: hidden;
-  animation: slideUp 0.15s ease;
+  animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .dropHeader {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px; border-bottom: 1px solid var(--border-light);
-  font-weight: 600; font-size: 0.875rem;
+  padding: 16px 20px; border-bottom: 1px solid var(--border-light);
+  font-weight: 700; font-size: 0.875rem;
+  color: var(--text-primary);
 }
-.markBtn { background: none; border: none; color: var(--accent); font-size: 0.8rem; cursor: pointer; }
-.dropList { max-height: 360px; overflow-y: auto; }
-.notifItem { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border-light); transition: background var(--transition); }
+.markBtn { background: none; border: none; color: var(--accent); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: color var(--transition); }
+.markBtn:hover { color: var(--accent-hover); }
+.dropList { max-height: 380px; overflow-y: auto; }
+.notifItem { display: flex; gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--border-light); transition: background var(--transition); }
 .notifItem:hover { background: var(--bg-hover); }
 .notifItem.unread { background: var(--accent-dim); }
-.notifIcon { font-size: 1.1rem; flex-shrink: 0; margin-top: 2px; }
-.notifMsg { font-size: 0.85rem; line-height: 1.4; }
-.notifTime { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
-.empty { text-align: center; color: var(--text-muted); padding: 24px; font-size: 0.875rem; }
-@media (max-width: 1024px) { .menuBtn { display: block; } }
-@media (max-width: 480px) {
-  .dropdown {
-    width: 290px;
-    right: -12px;
-  }
-  :global(html[dir="rtl"]) .dropdown {
-    right: auto;
-    left: -12px;
-  }
-}
+.notifIcon { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+.notifMsg { font-size: 0.85rem; line-height: 1.45; color: var(--text-primary); }
+.notifTime { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+.empty { text-align: center; color: var(--text-muted); padding: 32px; font-size: 0.875rem; }
 
 :global(html[dir="rtl"]) .dropdown {
   right: auto;
   left: 0;
 }
+
+@media (max-width: 1024px) { .menuBtn { display: block; } }
+
 @media (max-width: 600px) {
   .topbar {
-    padding: 0 12px;
+    padding: 0 16px;
     gap: 8px;
+    height: 64px;
   }
   .left {
     gap: 8px;
   }
   .right {
-    gap: 6px;
+    gap: 8px;
   }
   .title {
-    font-size: 0.9rem;
-    max-width: 140px;
+    font-size: 0.95rem;
+    max-width: 180px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dropdown {
+    width: 300px;
+    right: -16px;
+  }
+  :global(html[dir="rtl"]) .dropdown {
+    right: auto;
+    left: -16px;
   }
 }
 
@@ -113,7 +134,7 @@
     display: none;
   }
   .langBtn {
-    min-width: 32px;
+    min-width: 36px;
     padding: 8px;
     gap: 0;
   }
