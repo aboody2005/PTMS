@@ -59,7 +59,17 @@ export const api = {
         },
       });
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        if (error.message && error.message.includes('Email rate limit exceeded')) {
+          const isAr = typeof window !== 'undefined' && localStorage.getItem('ptms_lang') === 'ar';
+          throw new Error(
+            isAr
+              ? 'تم تجاوز حد إرسال البريد الإلكتروني. لحل هذه المشكلة، يرجى الانتقال إلى لوحة تحكم Supabase > Authentication > Providers > Email وتعطيل خيار "Confirm email" (تأكيد البريد الإلكتروني).'
+              : 'Email rate limit exceeded. To resolve this, go to your Supabase Dashboard > Authentication > Providers > Email and disable "Confirm email".'
+          );
+        }
+        throw new Error(error.message);
+      }
       if (!data.user) throw new Error('Registration failed');
 
       const userId = data.user.id;
@@ -214,7 +224,17 @@ export const api = {
         },
       });
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        if (error.message && error.message.includes('Email rate limit exceeded')) {
+          const isAr = typeof window !== 'undefined' && localStorage.getItem('ptms_lang') === 'ar';
+          throw new Error(
+            isAr
+              ? 'تم تجاوز حد إرسال البريد الإلكتروني. لحل هذه المشكلة، يرجى الانتقال إلى لوحة تحكم Supabase > Authentication > Providers > Email وتعطيل خيار "Confirm email" (تأكيد البريد الإلكتروني).'
+              : 'Email rate limit exceeded. To resolve this, go to your Supabase Dashboard > Authentication > Providers > Email and disable "Confirm email".'
+          );
+        }
+        throw new Error(error.message);
+      }
       if (!data.user) throw new Error('Failed to create user');
 
       const userId = data.user.id;
