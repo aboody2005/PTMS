@@ -91,65 +91,21 @@ export function AuthProvider({ children }) {
    * Performed client-side via supabase.auth.signUp.
    */
   const register = async (payload) => {
-    const { name, email, password, role, phone, gender, locationId } = payload;
+    const { email, password } = payload;
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name,
-          role: role || 'student',
-        },
-      },
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
 
-    if (error) {
-      if (error.message && error.message.includes('Email rate limit exceeded')) {
-        const isAr = typeof window !== 'undefined' && localStorage.getItem('ptms_lang') === 'ar';
-        throw new Error(
-          isAr
-            ? 'تم تجاوز حد إرسال البريد الإلكتروني. لحل هذه المشكلة، يرجى الانتقال إلى لوحة تحكم Supabase > Authentication > Providers > Email وتعطيل خيار "Confirm email" (تأكيد البريد الإلكتروني).'
-            : 'Email rate limit exceeded. To resolve this, go to your Supabase Dashboard > Authentication > Providers > Email and disable "Confirm email".'
-        );
-      }
-      throw new Error(error.message);
-    }
-    if (!data.user) throw new Error('Registration failed');
-
-    const userId = data.user.id;
-    const targetRole = role || 'student';
-
-    // Update phone & gender on the profile
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({
-        phone: phone || '',
-        gender: gender || '',
-      })
-      .eq('id', userId);
-
-    if (profileError) {
-      console.error('Profile update error:', profileError);
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Registration failed');
     }
 
-    // If student and locationId is specified, update location_id on student table
-    if (targetRole === 'student' && locationId) {
-      const { error: studentError } = await supabase
-        .from('students')
-        .update({
-          location_id: locationId,
-        })
-        .eq('user_id', userId);
-
-      if (studentError) {
-        console.error('Student location update error:', studentError);
-      }
-    }
-
-    const profile = await fetchProfile(data.user);
-    setUser(profile);
-    return profile;
+    // Automatically sign the user in after registration
+    return await login(email, password);
   };
 
   /**

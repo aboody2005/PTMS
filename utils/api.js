@@ -45,61 +45,17 @@ export const api = {
     },
 
     /** Registration via client-side signUp */
+    /** Registration via server-side to bypass SMTP and verification */
     register: async (body) => {
-      const { name, email, password, role, phone, gender, locationId } = body;
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-            role: role || 'student',
-          },
-        },
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       });
 
-      if (error) {
-        if (error.message && error.message.includes('Email rate limit exceeded')) {
-          const isAr = typeof window !== 'undefined' && localStorage.getItem('ptms_lang') === 'ar';
-          throw new Error(
-            isAr
-              ? 'تم تجاوز حد إرسال البريد الإلكتروني. لحل هذه المشكلة، يرجى الانتقال إلى لوحة تحكم Supabase > Authentication > Providers > Email وتعطيل خيار "Confirm email" (تأكيد البريد الإلكتروني).'
-              : 'Email rate limit exceeded. To resolve this, go to your Supabase Dashboard > Authentication > Providers > Email and disable "Confirm email".'
-          );
-        }
-        throw new Error(error.message);
-      }
-      if (!data.user) throw new Error('Registration failed');
-
-      const userId = data.user.id;
-      const targetRole = role || 'student';
-
-      // Update phone & gender on the profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          phone: phone || '',
-          gender: gender || '',
-        })
-        .eq('id', userId);
-
-      if (profileError) {
-        console.error('Profile update error:', profileError);
-      }
-
-      // If student and locationId is specified, update location_id on student table
-      if (targetRole === 'student' && locationId) {
-        const { error: studentError } = await supabase
-          .from('students')
-          .update({
-            location_id: locationId,
-          })
-          .eq('user_id', userId);
-
-        if (studentError) {
-          console.error('Student location update error:', studentError);
-        }
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Registration failed');
       }
 
       return { user: data.user };
@@ -201,55 +157,17 @@ export const api = {
       return { user: serializeUser(profile) };
     },
 
-    /** Create user — client-side via temp client signUp */
+    /** Create user — server-side to bypass email verification and rate limits */
     create: async (body) => {
-      const { name, email, password, role, phone, gender } = body;
-
-      const tempSupabase = createClient(supabaseUrl, supabaseAnonKey, {
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false,
-          detectSessionInUrl: false,
-        },
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       });
 
-      const { data, error } = await tempSupabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-            role: role || 'student',
-          },
-        },
-      });
-
-      if (error) {
-        if (error.message && error.message.includes('Email rate limit exceeded')) {
-          const isAr = typeof window !== 'undefined' && localStorage.getItem('ptms_lang') === 'ar';
-          throw new Error(
-            isAr
-              ? 'تم تجاوز حد إرسال البريد الإلكتروني. لحل هذه المشكلة، يرجى الانتقال إلى لوحة تحكم Supabase > Authentication > Providers > Email وتعطيل خيار "Confirm email" (تأكيد البريد الإلكتروني).'
-              : 'Email rate limit exceeded. To resolve this, go to your Supabase Dashboard > Authentication > Providers > Email and disable "Confirm email".'
-          );
-        }
-        throw new Error(error.message);
-      }
-      if (!data.user) throw new Error('Failed to create user');
-
-      const userId = data.user.id;
-
-      // Update profiles with extra fields using the main admin client
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          phone: phone || '',
-          gender: gender || '',
-        })
-        .eq('id', userId);
-
-      if (profileError) {
-        console.error('Error updating profiles:', profileError);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create user');
       }
 
       return { message: 'User created successfully', user: data.user };
