@@ -87,8 +87,8 @@ export function AuthProvider({ children }) {
   };
 
   /**
-   * Register a new user.
-   * Performed client-side via supabase.auth.signUp.
+   * Register a new user via the server-side API route,
+   * then automatically sign in.
    */
   const register = async (payload) => {
     const { email, password } = payload;
@@ -103,6 +103,10 @@ export function AuthProvider({ children }) {
     if (!res.ok) {
       throw new Error(data.error || 'Registration failed');
     }
+
+    // Brief pause so the handle_new_user trigger finishes creating
+    // the profile row before we sign in and try to fetch it.
+    await new Promise((r) => setTimeout(r, 600));
 
     // Automatically sign the user in after registration
     return await login(email, password);
