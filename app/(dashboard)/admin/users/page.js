@@ -64,7 +64,12 @@ export default function AdminUsers() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, [page, roleFilter]);
+  useEffect(() => {
+    Promise.resolve().then(() => {
+      load();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, roleFilter]);
 
   const handleSearch = (e) => { e.preventDefault(); setPage(1); load(); };
 

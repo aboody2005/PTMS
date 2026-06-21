@@ -23,7 +23,9 @@ export default function Topbar({ onMenuToggle, title }) {
   };
 
   useEffect(() => {
-    loadNotifs();
+    Promise.resolve().then(() => {
+      loadNotifs();
+    });
     const interval = setInterval(loadNotifs, 30000);
     return () => clearInterval(interval);
   }, []);

@@ -15,7 +15,12 @@ export default function AdminLocations() {
     try { const data = await api.locations.list(); setLocations(data.locations || []); }
     catch {} finally { setLoading(false); }
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    Promise.resolve().then(() => {
+      load();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const openCreate = () => { setEditItem(null); setForm({ name: '', city: '', region: '' }); setModal(true); };
   const openEdit = (loc) => { setEditItem(loc); setForm({ name: loc.name, city: loc.city, region: loc.region || '' }); setModal(true); };

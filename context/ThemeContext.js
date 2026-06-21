@@ -9,7 +9,9 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     const saved = localStorage.getItem('ptms_theme');
     if (saved) {
-      setTheme(saved);
+      Promise.resolve().then(() => {
+        setTheme(saved);
+      });
     }
   }, []);
 
