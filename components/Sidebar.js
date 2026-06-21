@@ -37,7 +37,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
   return (
     <>
       {mobileOpen && <div className={styles.overlay} onClick={onClose} />}
-      <div className={styles.sidebarWrapper}>
+      <div className={`${styles.sidebarWrapper} ${mobileOpen ? styles.openWrapper : ''}`}>
         <aside className={`${styles.sidebar} ${mobileOpen ? styles.open : ''}`}>
           {/* Logo */}
           <div className={styles.logo}>
