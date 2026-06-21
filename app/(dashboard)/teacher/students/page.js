@@ -55,7 +55,12 @@ export default function TeacherStudents() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, [page, locationFilter]);
+  useEffect(() => {
+    Promise.resolve().then(() => {
+      load();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, locationFilter]);
 
   const filtered = students
     .filter(s => !search || s.userId?.name?.toLowerCase().includes(search.toLowerCase()))

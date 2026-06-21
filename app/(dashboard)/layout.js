@@ -29,7 +29,9 @@ export default function DashboardLayout({ children }) {
   const [pathname, setPathname] = useState('');
 
   useEffect(() => {
-    setPathname(window.location.pathname);
+    Promise.resolve().then(() => {
+      setPathname(window.location.pathname);
+    });
   }, []);
 
   useEffect(() => {

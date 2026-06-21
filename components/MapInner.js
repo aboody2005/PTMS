@@ -74,7 +74,9 @@ export default function MapInner({ lat, lng, onChange }) {
 
   useEffect(() => {
     if (lat && lng && (position[0] !== lat || position[1] !== lng)) {
-      setPosition([lat, lng]);
+      Promise.resolve().then(() => {
+        setPosition([lat, lng]);
+      });
     }
   }, [lat, lng, position]);
 

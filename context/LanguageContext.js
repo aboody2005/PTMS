@@ -352,7 +352,9 @@ export function LanguageProvider({ children }) {
   useEffect(() => {
     const saved = localStorage.getItem('ptms_lang');
     if (saved && (saved === 'en' || saved === 'ar')) {
-      setLocale(saved);
+      Promise.resolve().then(() => {
+        setLocale(saved);
+      });
     }
   }, []);
 

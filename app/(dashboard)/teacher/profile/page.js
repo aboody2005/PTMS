@@ -18,16 +18,18 @@ export default function TeacherProfile() {
 
   useEffect(() => {
     if (user) {
-      setUserForm({
-        name: user.name || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        gender: user.gender || '',
-        profileImage: user.profileImage || '',
-        password: '',
-        confirmPassword: '',
+      Promise.resolve().then(() => {
+        setUserForm({
+          name: user.name || '',
+          email: user.email || '',
+          phone: user.phone || '',
+          gender: user.gender || '',
+          profileImage: user.profileImage || '',
+          password: '',
+          confirmPassword: '',
+        });
+        setLoading(false);
       });
-      setLoading(false);
     }
   }, [user]);
 
