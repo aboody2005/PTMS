@@ -8,6 +8,9 @@ export const metadata = {
   title: 'PTMS – Pharmacy Training Management System',
   description: 'A modern platform for managing pharmacy student training, supervision, and reporting in Iraq.',
   keywords: 'pharmacy training, student management, Iraq pharmacy, training system',
+  icons: {
+    icon: '/icon.png',
+  },
 };
 
 export const viewport = {
