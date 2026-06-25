@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   email TEXT NOT NULL DEFAULT '',
   role TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'teacher', 'admin')),
   phone TEXT DEFAULT '',
-  gender TEXT DEFAULT '' CHECK (gender IN ('male', 'female', 'other', '')),
+  gender TEXT DEFAULT '' CHECK (gender IN ('male', 'female', '')),
   profile_image TEXT DEFAULT '',
   reset_token TEXT DEFAULT NULL,
   reset_token_expiry TIMESTAMPTZ DEFAULT NULL,

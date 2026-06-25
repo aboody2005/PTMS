@@ -100,6 +100,7 @@ const translations = {
     sideUsers: 'User Management',
     sideAssignments: 'Assignments',
     sideLocations: 'Locations',
+    sideVisits: 'Show Visits',
 
     // Profile Page
     personalInfo: 'Personal Information',
@@ -270,6 +271,7 @@ const translations = {
     sideUsers: 'إدارة المستخدمين',
     sideAssignments: 'التعيينات والربط',
     sideLocations: 'مواقع الصيدليات',
+    sideVisits: 'عرض الزيارات',
 
     // Profile Page
     personalInfo: 'المعلومات الشخصية',

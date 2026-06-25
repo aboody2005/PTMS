@@ -143,7 +143,6 @@ export default function TeacherProfile() {
               <option value="">{locale === 'ar' ? 'اختر الجنس' : 'Select'}</option>
               <option value="male">{t('genderMale')}</option>
               <option value="female">{t('genderFemale')}</option>
-              <option value="other">{t('genderOther')}</option>
             </select>
           </div>
 

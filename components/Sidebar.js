@@ -28,6 +28,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
       { href: '/admin/users', icon: '👥', labelKey: 'sideUsers' },
       { href: '/admin/assignments', icon: '🔗', labelKey: 'sideAssignments' },
       { href: '/admin/locations', icon: '📍', labelKey: 'sideLocations' },
+      { href: '/admin/visits', icon: '👁', labelKey: 'sideVisits' },
       { href: '/admin/reports', icon: '📊', labelKey: 'sideReports' },
       { href: '/admin/profile', icon: '👤', labelKey: 'sideMyProfile' },
     ],

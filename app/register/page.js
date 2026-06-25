@@ -137,7 +137,7 @@ export default function RegisterPage() {
               <label className="form-label">{t('fullNameLabel')} *</label>
               <input
                 className="form-control"
-                placeholder={locale === 'ar' ? 'د. أحمد حسن' : 'Dr. Ahmed Hassan'}
+                placeholder={locale === 'ar' ? 'الاسم الكامل' : 'Full Name'}
                 value={form.name}
                 onChange={set('name')}
                 required
@@ -161,7 +161,7 @@ export default function RegisterPage() {
               <input
                 className="form-control"
                 type="tel"
-                placeholder="+964-770-..."
+                placeholder="07XXXXXXXXX"
                 value={form.phone}
                 onChange={set('phone')}
               />
@@ -173,7 +173,6 @@ export default function RegisterPage() {
                 <option value="">{t('genderSelect')}</option>
                 <option value="male">{t('genderMale')}</option>
                 <option value="female">{t('genderFemale')}</option>
-                <option value="other">{t('genderOther')}</option>
               </select>
             </div>
 
