@@ -5,6 +5,7 @@ import { api } from '@/utils/api';
 import LocationPicker from '@/components/LocationPicker';
 import { useTranslation } from '@/context/LanguageContext';
 import toast from 'react-hot-toast';
+import ImageCropperModal from '@/components/ImageCropperModal';
 
 export default function StudentProfile() {
   const { user, updateUser } = useAuth();
@@ -14,6 +15,7 @@ export default function StudentProfile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
+  const [cropperSrc, setCropperSrc] = useState(null);
   const fileRef = useRef();
 
   const [userForm, setUserForm] = useState({ name: '', email: '', phone: '', gender: '', profileImage: '', password: '', confirmPassword: '' });
@@ -96,11 +98,11 @@ export default function StudentProfile() {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      return toast.error(locale === 'ar' ? 'يجب أن يكون حجم الصورة أقل من 2 ميغابايت' : 'Image must be under 2MB');
+    if (file.size > 10 * 1024 * 1024) {
+      return toast.error(locale === 'ar' ? 'يجب أن يكون حجم الصورة أقل من 10 ميغابايت' : 'Image must be under 10MB');
     }
     const reader = new FileReader();
-    reader.onload = (ev) => setUserForm(p => ({ ...p, profileImage: ev.target.result }));
+    reader.onload = (ev) => setCropperSrc(ev.target.result);
     reader.readAsDataURL(file);
   };
 
@@ -447,6 +449,17 @@ export default function StudentProfile() {
             </form>
           </div>
         </div>
+      )}
+      {cropperSrc && (
+        <ImageCropperModal
+          imageSrc={cropperSrc}
+          locale={locale}
+          onClose={() => setCropperSrc(null)}
+          onCrop={(croppedDataUrl) => {
+            setUserForm(p => ({ ...p, profileImage: croppedDataUrl }));
+            setCropperSrc(null);
+          }}
+        />
       )}
     </div>
   );
