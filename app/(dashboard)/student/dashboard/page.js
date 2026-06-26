@@ -114,7 +114,6 @@ export default function StudentDashboard() {
                 { label: locale === 'ar' ? 'الاسم الكامل' : 'Full Name', val: user?.name },
                 { label: t('emailLabel'), val: user?.email },
                 { label: t('phoneLabel'), val: user?.phone || (locale === 'ar' ? 'غير محدد' : 'Not set') },
-                { label: t('universityLabel'), val: student?.university || (locale === 'ar' ? 'غير محدد' : 'Not set') },
                 { label: locale === 'ar' ? 'الصيدلية' : 'Pharmacy', val: student?.pharmacyName || (locale === 'ar' ? 'غير محدد' : 'Not set') },
               ].map(({ label, val }) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--border-light)', fontSize: '0.85rem', gap: 12 }}>
@@ -167,7 +166,6 @@ export default function StudentDashboard() {
                     <th>{locale === 'ar' ? 'المشرف' : 'Supervisor'}</th>
                     <th>{locale === 'ar' ? 'التاريخ' : 'Date'}</th>
                     <th>{locale === 'ar' ? 'الوقت' : 'Time'}</th>
-                    <th>{locale === 'ar' ? 'ملاحظات' : 'Notes'}</th>
                     <th>{t('statusLabel')}</th>
                   </tr>
                 </thead>
@@ -177,7 +175,6 @@ export default function StudentDashboard() {
                       <td>{locale === 'ar' ? 'المشرف الأكاديمي' : 'Academic Supervisor'}</td>
                       <td>{format(new Date(v.visitedAt), 'dd MMM yyyy')}</td>
                       <td>{formatTimeOnly12h(v.visitedAt, locale)}</td>
-                      <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.notes || '—'}</td>
                       <td><span className="badge badge-success">✅ {locale === 'ar' ? 'تمت الزيارة' : v.status}</span></td>
                     </tr>
                   ))}

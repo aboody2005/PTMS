@@ -279,10 +279,7 @@ export default function StudentProfile() {
               </div>
             )}
 
-            <div className="form-group">
-              <label className="form-label">{t('universityLabel')}</label>
-              <input className="form-control" value="جامعة الحدباء" disabled />
-            </div>
+
             
             <div className="form-group">
               <label className="form-label">{t('pharmacyNameLabel')}</label>

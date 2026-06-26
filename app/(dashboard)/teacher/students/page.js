@@ -29,7 +29,6 @@ export default function TeacherStudents() {
   const [selected, setSelected] = useState(null);
   const [viewMode, setViewMode] = useState('visit'); // 'visit' | 'view'
   const [visiting, setVisiting] = useState(false);
-  const [visitNote, setVisitNote] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -77,7 +76,6 @@ export default function TeacherStudents() {
   const openVisit = (s) => {
     setSelected(s);
     setViewMode('visit');
-    setVisitNote('');
   };
 
   /** Open student details in read-only view mode (already visited) */
@@ -90,10 +88,9 @@ export default function TeacherStudents() {
     if (!selected || visiting) return;
     setVisiting(true);
     try {
-      await api.visits.create({ studentId: selected._id, notes: visitNote });
+      await api.visits.create({ studentId: selected._id });
       toast.success(`✅ Visit confirmed for ${selected.userId?.name}`);
       setSelected(null);
-      setVisitNote('');
       await load();
     } catch (err) {
       toast.error(err.message || 'Failed to record visit. Please try again.');
@@ -104,7 +101,6 @@ export default function TeacherStudents() {
 
   const closeModal = () => {
     setSelected(null);
-    setVisitNote('');
   };
 
   return (
@@ -368,22 +364,6 @@ export default function TeacherStudents() {
                     {locale === 'ar' ? 'موقع الطالب الجغرافي (GPS)' : "Student's GPS Location"}
                   </p>
                   <MapInner lat={selected.latitude} lng={selected.longitude} />
-                </div>
-              )}
-
-              {/* Notes field — editable only in visit mode */}
-              {viewMode === 'visit' && (
-                <div className="form-group">
-                  <label className="form-label">
-                    {locale === 'ar' ? 'ملاحظات الزيارة (اختياري)' : 'Visit Notes (optional)'}
-                  </label>
-                  <textarea
-                    className="form-control"
-                    rows={3}
-                    placeholder={locale === 'ar' ? 'أضف أي ملاحظات حول هذه الزيارة...' : 'Add any notes about this visit...'}
-                    value={visitNote}
-                    onChange={(e) => setVisitNote(e.target.value)}
-                  />
                 </div>
               )}
             </div>
