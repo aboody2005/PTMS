@@ -86,6 +86,7 @@ export default function AdminVisits() {
             visitTeacherName: visit?.teacher_name || '',
             attendanceStart: s.attendance_start || '',
             attendanceEnd: s.attendance_end || '',
+            trainingDays: Array.isArray(s.training_days) ? s.training_days : [],
           };
         });
 
@@ -389,10 +390,35 @@ export default function AdminVisits() {
                           ? (locale === 'ar' ? 'شهر الثامن' : 'August')
                           : (locale === 'ar' ? 'غير محدد' : 'Not set')
                     ) : '—'],
-                  [locale === 'ar' ? 'وقت بداية التواجد' : 'Attendance Start',
-                    fmt12h(selected.attendanceStart)],
-                  [locale === 'ar' ? 'وقت انتهاء التواجد' : 'Attendance End',
-                    fmt12h(selected.attendanceEnd)],
+                ].map(([l, v]) => (
+                  <div key={l} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span className="text-muted" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{l}</span>
+                    <strong style={{ fontSize: '0.875rem' }}>{v}</strong>
+                  </div>
+                ))}
+              </div>
+
+              {/* Training Days — full width */}
+              <div style={{ marginBottom: 12, fontSize: '0.875rem' }}>
+                <span className="text-muted" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: 4 }}>
+                  {locale === 'ar' ? 'أيام التدريب' : 'Training Days'}
+                </span>
+                <strong style={{ fontSize: '0.875rem' }}>
+                  {Array.isArray(selected.trainingDays) && selected.trainingDays.length > 0
+                    ? (selected.trainingDays.length === 7
+                        ? (locale === 'ar' ? 'كل الأيام' : 'All Days')
+                        : selected.trainingDays.map(d => ({
+                            sunday:'الأحد',monday:'الاثنين',tuesday:'الثلاثاء',wednesday:'الأربعاء',thursday:'الخميس',friday:'الجمعة',saturday:'السبت',
+                          })[d] || d).join('، '))
+                    : '—'}
+                </strong>
+              </div>
+
+              {/* Attendance times — side by side */}
+              <div className="grid grid-2" style={{ gap: 12, marginBottom: 16, fontSize: '0.875rem' }}>
+                {[
+                  [locale === 'ar' ? 'وقت بداية التواجد' : 'Attendance Start', fmt12h(selected.attendanceStart)],
+                  [locale === 'ar' ? 'وقت انتهاء التواجد' : 'Attendance End',  fmt12h(selected.attendanceEnd)],
                 ].map(([l, v]) => (
                   <div key={l} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <span className="text-muted" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{l}</span>

@@ -14,12 +14,12 @@ export default function StudentProfile() {
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [isLocked, setIsLocked] = useState(false);
+  const [isLocked, setIsLocked] = useState(true);
   const [cropperSrc, setCropperSrc] = useState(null);
   const fileRef = useRef();
 
   const [userForm, setUserForm] = useState({ name: '', email: '', phone: '', gender: '', profileImage: '', password: '', confirmPassword: '' });
-  const [studentForm, setStudentForm] = useState({ university: '', pharmacyName: '', startDate: '', endDate: '', locationId: '', latitude: null, longitude: null, attendanceStart: '', attendanceEnd: '' });
+  const [studentForm, setStudentForm] = useState({ university: '', pharmacyName: '', startDate: '', endDate: '', locationId: '', latitude: null, longitude: null, attendanceStart: '', attendanceEnd: '', trainingDays: [] });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -55,6 +55,7 @@ export default function StudentProfile() {
           locationId: s.locationId?._id || '', latitude: s.latitude, longitude: s.longitude,
           attendanceStart: s.attendanceStart || '',
           attendanceEnd: s.attendanceEnd || '',
+          trainingDays: Array.isArray(s.trainingDays) ? s.trainingDays : [],
         });
       } catch {
         toast.error(locale === 'ar' ? 'فشل تحميل الملف الشخصي' : 'Failed to load profile');
@@ -301,6 +302,61 @@ export default function StudentProfile() {
                 <option value="july">{locale === 'ar' ? 'شهر السابع' : 'July'}</option>
                 <option value="august">{locale === 'ar' ? 'شهر الثامن' : 'August'}</option>
               </select>
+            </div>
+
+            {/* Training Days */}
+            <div className="form-group">
+              <label className="form-label">
+                {locale === 'ar' ? 'أيام التدريب' : 'Training Days'}
+              </label>
+              {(() => {
+                const allDays = [
+                  { key: 'sunday',    ar: 'الأحد',     en: 'Sun' },
+                  { key: 'monday',    ar: 'الاثنين',   en: 'Mon' },
+                  { key: 'tuesday',   ar: 'الثلاثاء',  en: 'Tue' },
+                  { key: 'wednesday', ar: 'الأربعاء',  en: 'Wed' },
+                  { key: 'thursday',  ar: 'الخميس',    en: 'Thu' },
+                  { key: 'friday',    ar: 'الجمعة',    en: 'Fri' },
+                  { key: 'saturday',  ar: 'السبت',     en: 'Sat' },
+                ];
+                const toggle = (key) => {
+                  setStudentForm(p => ({
+                    ...p,
+                    trainingDays: p.trainingDays.includes(key)
+                      ? p.trainingDays.filter(d => d !== key)
+                      : [...p.trainingDays, key],
+                  }));
+                };
+                return (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+                    {allDays.map(({ key, ar, en }) => {
+                      const selected = studentForm.trainingDays.includes(key);
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          disabled={isLocked}
+                          onClick={() => toggle(key)}
+                          style={{
+                            padding: '7px 16px',
+                            borderRadius: 22,
+                            border: `2px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
+                            background: selected ? 'var(--accent-dim)' : 'transparent',
+                            color: selected ? 'var(--accent)' : 'var(--text-muted)',
+                            fontWeight: selected ? 700 : 400,
+                            fontSize: '0.86rem',
+                            cursor: isLocked ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.18s ease',
+                            opacity: isLocked ? 0.6 : 1,
+                          }}
+                        >
+                          {locale === 'ar' ? ar : en}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Attendance Time */}

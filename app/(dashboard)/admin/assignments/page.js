@@ -14,7 +14,7 @@ export default function AdminAssignments() {
   const [search, setSearch] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [editingStudent, setEditingStudent] = useState(null);
-  const [editForm, setEditForm] = useState({ startDate: '', endDate: '', status: '', teacherId: '', locationId: '' });
+  const [editForm, setEditForm] = useState({ startDate: '', endDate: '', status: '', teacherId: '', locationId: '', trainingDays: [] });
   const [bulkEndDate, setBulkEndDate] = useState('');
   const [savedGlobalEndDate, setSavedGlobalEndDate] = useState('');
   const [bulkUpdating, setBulkUpdating] = useState(false);
@@ -75,6 +75,7 @@ export default function AdminAssignments() {
       status: student.status || 'active',
       teacherId: student.teacherId?._id || student.teacherId || '',
       locationId: student.locationId?._id || student.locationId || '',
+      trainingDays: Array.isArray(student.trainingDays) ? student.trainingDays : [],
     });
   };
 
@@ -125,6 +126,7 @@ export default function AdminAssignments() {
         status: editForm.status,
         teacherId: editForm.teacherId || null,
         locationId: editForm.locationId || null,
+        trainingDays: editForm.trainingDays,
       };
       await api.students.update(editingStudent._id, payload);
       toast.success(locale === 'ar' ? 'تم تحديث بيانات الطالب بنجاح!' : 'Student updated successfully!');
@@ -364,6 +366,15 @@ export default function AdminAssignments() {
                           📅 {s.startDate.includes('-07-') ? (locale === 'ar' ? 'شهر السابع' : 'July') : s.startDate.includes('-08-') ? (locale === 'ar' ? 'شهر الثامن' : 'August') : (locale === 'ar' ? 'غير محدد' : 'Not set')}
                         </p>
                       )}
+                      {Array.isArray(s.trainingDays) && s.trainingDays.length > 0 && (
+                        <p className="text-xs" style={{marginTop:3, fontSize:'11px', color:'var(--accent)', fontWeight:600}}>
+                          🗓️ {s.trainingDays.length === 7
+                            ? (locale === 'ar' ? 'كل الأيام' : 'All Days')
+                            : s.trainingDays.map(d => ({
+                                sunday:'الأحد',monday:'الاثنين',tuesday:'الثلاثاء',wednesday:'الأربعاء',thursday:'الخميس',friday:'الجمعة',saturday:'السبت',
+                              })[d] || d).join('، ')}
+                        </p>
+                      )}
                     </td>
                     <td className="text-sm">{s.university || '—'}</td>
                     <td className="text-sm">
@@ -436,6 +447,51 @@ export default function AdminAssignments() {
                     <option value="july">{locale === 'ar' ? 'شهر السابع' : 'July'}</option>
                     <option value="august">{locale === 'ar' ? 'شهر الثامن' : 'August'}</option>
                   </select>
+                </div>
+
+                {/* Training Days — editable toggle buttons for admin */}
+                <div className="form-group" style={{ marginBottom: 16 }}>
+                  <label className="form-label" style={{ color: 'var(--text-secondary)', marginBottom: 8, display: 'block' }}>
+                    {locale === 'ar' ? 'أيام التدريب' : 'Training Days'}
+                  </label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+                    {[
+                      { key: 'sunday',    ar: 'الأحد'     },
+                      { key: 'monday',    ar: 'الاثنين'   },
+                      { key: 'tuesday',   ar: 'الثلاثاء'  },
+                      { key: 'wednesday', ar: 'الأربعاء'  },
+                      { key: 'thursday',  ar: 'الخميس'    },
+                      { key: 'friday',    ar: 'الجمعة'    },
+                      { key: 'saturday',  ar: 'السبت'     },
+                    ].map(({ key, ar }) => {
+                      const selected = editForm.trainingDays.includes(key);
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setEditForm(p => ({
+                            ...p,
+                            trainingDays: p.trainingDays.includes(key)
+                              ? p.trainingDays.filter(d => d !== key)
+                              : [...p.trainingDays, key],
+                          }))}
+                          style={{
+                            padding: '7px 16px',
+                            borderRadius: 22,
+                            border: `2px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
+                            background: selected ? 'var(--accent-dim)' : 'transparent',
+                            color: selected ? 'var(--accent)' : 'var(--text-muted)',
+                            fontWeight: selected ? 700 : 400,
+                            fontSize: '0.86rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.18s ease',
+                          }}
+                        >
+                          {ar}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
 

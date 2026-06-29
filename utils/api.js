@@ -412,7 +412,7 @@ export const api = {
 
     /** Update a student record */
     update: async (id, body) => {
-      const { university, pharmacyName, startDate, endDate, locationId, latitude, longitude, teacherId, status, attendanceStart, attendanceEnd } = body;
+      const { university, pharmacyName, startDate, endDate, locationId, latitude, longitude, teacherId, status, attendanceStart, attendanceEnd, trainingDays } = body;
 
       // Get current user role to enforce permission logic
       const { data: { user: authUser } } = await supabase.auth.getUser();
@@ -435,6 +435,7 @@ export const api = {
       if (status !== undefined && role === 'admin') updateData.status = status;
       if (attendanceStart !== undefined) updateData.attendance_start = attendanceStart || null;
       if (attendanceEnd !== undefined) updateData.attendance_end = attendanceEnd || null;
+      if (trainingDays !== undefined) updateData.training_days = Array.isArray(trainingDays) ? trainingDays : [];
 
       // Notify student of teacher assignment change
       if (teacherId !== undefined) {
