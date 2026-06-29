@@ -438,18 +438,7 @@ export default function AdminAssignments() {
                   </select>
                 </div>
 
-                {editForm.startDate && editForm.endDate && (
-                  <div className="grid grid-2" style={{ gap: 16, marginBottom: 16 }}>
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <label className="form-label" style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>{locale === 'ar' ? 'تاريخ البدء' : 'Start Date'}</label>
-                      <input className="form-control" type="date" value={editForm.startDate} disabled />
-                    </div>
-                    <div className="form-group" style={{ margin: 0 }}>
-                      <label className="form-label" style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>{locale === 'ar' ? 'تاريخ الانتهاء' : 'End Date'}</label>
-                      <input className="form-control" type="date" value={editForm.endDate} disabled />
-                    </div>
-                  </div>
-                )}
+
 
                 <div className="form-group" style={{ marginBottom: 16 }}>
                   <label className="form-label" style={{ color: 'var(--text-secondary)' }}>{t('statusLabel')}</label>

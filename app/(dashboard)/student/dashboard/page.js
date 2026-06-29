@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/utils/api';
-import { format, differenceInDays, startOfDay } from 'date-fns';
+import { format } from 'date-fns';
 import { useTranslation } from '@/context/LanguageContext';
 import { formatTimeOnly12h } from '@/utils/date';
 
@@ -48,30 +48,32 @@ export default function StudentDashboard() {
     if (student?.status === 'completed' || visits.length > 0) return 100;
     if (!student || !user) return 0;
     const fields = [user.name, user.email, user.phone, user.gender, user.profileImage,
-      student.university, student.pharmacyName, student.startDate, student.endDate, student.locationId];
+      student.university, student.pharmacyName, student.startDate, student.locationId];
     const filled = fields.filter(Boolean).length;
     return Math.round((filled / fields.length) * 100);
   };
 
   const daysLeft = () => {
-    if (!student?.endDate) return null;
-    
-    const parseLocalDate = (dateStr) => {
-      if (!dateStr) return null;
-      const parts = dateStr.split('T')[0].split('-');
-      if (parts.length === 3) {
-        return new Date(Date.UTC(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2])));
-      }
-      return new Date(dateStr);
-    };
+    // Derive end date from training month (startDate holds month info)
+    // No month selected → 0
+    if (!student?.startDate) return 0;
 
-    const endUtc = parseLocalDate(student.endDate);
+    const datePart = student.startDate.split('T')[0]; // e.g. "2026-07-01"
+    const month = parseInt(datePart.split('-')[1], 10); // 7 = July, 8 = August
+    const year = parseInt(datePart.split('-')[0], 10);
+
+    // Both July (7) and August (8) have 31 days
+    if (month !== 7 && month !== 8) return 0;
+
+    const endUtc = new Date(Date.UTC(year, month - 1, 31)); // Jul 31 or Aug 31
+
     const today = new Date();
     const todayUtc = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
 
-    if (!endUtc || !todayUtc) return null;
-    return differenceInDays(endUtc, todayUtc);
+    const diff = Math.floor((endUtc - todayUtc) / (1000 * 60 * 60 * 24));
+    return diff > 0 ? diff : 0;
   };
+
 
   if (loading) return <div className="flex-center" style={{height:300}}><div className="spinner" /></div>;
 
@@ -90,7 +92,7 @@ export default function StudentDashboard() {
         {[
           { icon: '📋', label: t('statusLabel'), value: student?.status === 'completed' ? t('completedHours') : t('activeTraining'), color: 'var(--accent)', bg: 'var(--accent-dim)' },
           { icon: '✅', label: t('totalVisits'), value: visits.length, color: 'var(--green)', bg: 'var(--green-dim)' },
-          { icon: '📅', label: locale === 'ar' ? 'الأيام المتبقية' : 'Days Remaining', value: days !== null ? (days > 0 ? days : t('completedHours')) : '—', color: 'var(--yellow)', bg: 'var(--yellow-dim)' },
+          { icon: '📅', label: locale === 'ar' ? 'الأيام المتبقية' : 'Days Remaining', value: days > 0 ? days : (days === 0 ? 0 : t('completedHours')), color: 'var(--yellow)', bg: 'var(--yellow-dim)' },
           { icon: '🏥', label: locale === 'ar' ? 'الصيدلية' : 'Pharmacy', value: student?.pharmacyName || (locale === 'ar' ? 'غير محدد' : 'Not set'), color: 'var(--purple)', bg: 'var(--purple-dim)' },
         ].map(({ icon, label, value, color, bg }) => (
           <div key={label} className="stat-card">
