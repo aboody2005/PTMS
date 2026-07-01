@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '@/utils/api';
-import { exportReportsCSV } from '@/utils/exportCSV';
-import { exportReportPDF } from '@/utils/exportPDF';
+import { exportReportsCSV, exportReportsExcel } from '@/utils/exportCSV';
 import { format } from 'date-fns';
 import { useTranslation } from '@/context/LanguageContext';
 import toast from 'react-hot-toast';
@@ -25,15 +24,15 @@ export default function TeacherReports() {
     load();
   }, []);
 
-  const handleExportPDF = async () => {
-    const loadingToast = toast.loading(locale === 'ar' ? 'جاري تحضير ملف PDF...' : 'Preparing PDF...');
+  const handleExportExcel = async () => {
+    const loadingToast = toast.loading(locale === 'ar' ? 'جاري تحضير ملف Excel...' : 'Preparing Excel...');
     try {
-      await exportReportPDF(reports, locale === 'ar' ? 'تقرير تدريب الطلاب' : 'Teacher Student Report', locale);
+      await exportReportsExcel(reports, locale === 'ar' ? 'تقرير_تدريب_الطلاب' : 'teacher_report', locale);
       toast.dismiss(loadingToast);
-      toast.success(locale === 'ar' ? 'تم تحميل ملف PDF بنجاح!' : 'PDF downloaded successfully!');
+      toast.success(locale === 'ar' ? 'تم تحميل ملف Excel بنجاح!' : 'Excel downloaded successfully!');
     } catch (e) {
       toast.dismiss(loadingToast);
-      toast.error(locale === 'ar' ? 'فشل تحميل ملف PDF.' : 'Failed to generate PDF.');
+      toast.error(locale === 'ar' ? 'فشل تحميل ملف Excel.' : 'Failed to generate Excel.');
     }
   };
 
@@ -49,8 +48,7 @@ export default function TeacherReports() {
           </p>
         </div>
         <div style={{display:'flex',gap:10}}>
-          <button className="btn btn-secondary" onClick={() => exportReportsCSV(reports, locale === 'ar' ? 'تقرير_تدريب_الطلاب' : 'teacher_report', locale)}>📥 CSV</button>
-          <button className="btn btn-primary" onClick={handleExportPDF}>📄 PDF / {t('sideReports')}</button>
+          <button className="btn btn-primary" onClick={handleExportExcel}>📥 Excel / {t('sideReports')}</button>
         </div>
       </div>
 
