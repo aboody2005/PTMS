@@ -135,7 +135,7 @@ export default function TeacherStudents() {
           <option value="">{locale === 'ar' ? 'جميع المواقع' : 'All Locations'}</option>
           {locations.map((l) => (
             <option key={l._id} value={l._id}>
-              {l.name} — {l.city}
+              {l.city} — {l.name}
             </option>
           ))}
         </select>
@@ -180,9 +180,9 @@ export default function TeacherStudents() {
                         </div>
                       </td>
                       <td className="text-sm">
-                        {s.pharmacyName || s.locationId?.name || '—'}
+                        {s.locationId?.city || '—'}
                         <br />
-                        <span className="text-muted text-xs">{s.locationId?.city}</span>
+                        <span className="text-muted text-xs">{s.pharmacyName || s.locationId?.name || '—'}</span>
                       </td>
                       <td>
                         <span className={`badge badge-${s.status === 'completed' ? 'completed' : 'active'}`}>

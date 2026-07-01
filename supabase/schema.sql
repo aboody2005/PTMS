@@ -488,3 +488,34 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- ============================================================
+-- OFFICIAL STUDENTS LIST (Admin-maintained enrollment list)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS official_students (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  is_registered BOOLEAN DEFAULT FALSE,
+  registered_at TIMESTAMPTZ DEFAULT NULL,
+  linked_user_id UUID DEFAULT NULL REFERENCES profiles(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_official_students_name ON official_students(name);
+CREATE INDEX IF NOT EXISTS idx_official_students_is_registered ON official_students(is_registered);
+CREATE INDEX IF NOT EXISTS idx_official_students_linked_user_id ON official_students(linked_user_id);
+
+ALTER TABLE official_students ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admin manages official_students" ON official_students;
+CREATE POLICY "Admin manages official_students" ON official_students
+  FOR ALL
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
+
+DROP TRIGGER IF EXISTS update_official_students_updated_at ON official_students;
+CREATE TRIGGER update_official_students_updated_at
+  BEFORE UPDATE ON official_students
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON official_students TO authenticated, anon;

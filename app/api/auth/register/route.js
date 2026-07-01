@@ -23,10 +23,44 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 });
     }
 
+    // Phone is required and must be 07XXXXXXXXX (11 digits)
+    if (!phone || !/^07\d{9}$/.test(phone)) {
+      return NextResponse.json(
+        { error: 'رقم الهاتف مطلوب ويجب أن يبدأ بـ 07 ويتكون من 11 رقماً' },
+        { status: 400 }
+      );
+    }
+
     const supabaseAdmin = getAdminClient();
     const targetRole = role || 'student';
 
-    // 1. Create the auth user (email_confirm: true bypasses SMTP verification)
+    // 1. Validate name against official_students (students only)
+    if (targetRole === 'student') {
+      const { data: officials } = await supabaseAdmin
+        .from('official_students')
+        .select('id, name, is_registered');
+
+      const normalizedInput = name.trim().toLowerCase();
+      const match = (officials || []).find(
+        (s) => s.name.trim().toLowerCase() === normalizedInput
+      );
+
+      if (!match) {
+        return NextResponse.json(
+          { error: 'اسمك غير موجود في قائمة الطلبة الرسمية. تواصل مع إدارة الجامعة.' },
+          { status: 400 }
+        );
+      }
+
+      if (match.is_registered) {
+        return NextResponse.json(
+          { error: 'هذا الاسم مسجّل مسبقاً. إذا كان الحساب لك فتواصل مع الإدارة.' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 2. Create the auth user (email_confirm: true bypasses SMTP verification)
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -95,6 +129,15 @@ export async function POST(req) {
         }
       }
     }
+    // 4. Sync with official students list (fire-and-forget — don't block response)
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      fetch(`${baseUrl}/api/official-students/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, userId }),
+      }).catch(() => {}); // intentionally non-blocking
+    } catch (_) {}
 
     return NextResponse.json(
       { user: { id: userId, email, name, role: targetRole } },

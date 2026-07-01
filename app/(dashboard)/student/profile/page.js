@@ -458,7 +458,7 @@ export default function StudentProfile() {
                 onChange={e => setStudentForm(p => ({ ...p, locationId: e.target.value }))} disabled={isLocked}>
                 <option value="">{locale === 'ar' ? 'اختر الموقع...' : 'Select location...'}</option>
                 {locations.map(l => (
-                  <option key={l._id} value={l._id}>{l.region || l.name} — {l.city}</option>
+                  <option key={l._id} value={l._id}>{l.city} — {l.region || l.name}</option>
                 ))}
               </select>
               {!isLocked && (

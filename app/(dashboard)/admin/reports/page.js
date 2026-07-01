@@ -104,7 +104,7 @@ export default function AdminReports() {
           onChange={e => setLocationFilter(e.target.value)}>
           <option value="">{t('allLocations')}</option>
           {locations.map(l => (
-            <option key={l._id} value={l._id}>{l.region || l.name} — {l.city}</option>
+            <option key={l._id} value={l._id}>{l.city} — {l.region || l.name}</option>
           ))}
         </select>
       </div>
@@ -142,7 +142,7 @@ export default function AdminReports() {
                     </td>
                     <td className="text-sm">{r.student.university||'—'}</td>
                     <td className="text-sm">{r.student.pharmacyName||'—'}</td>
-                    <td className="text-sm">{r.student.location ? `${r.student.location}, ${r.student.city}` : '—'}</td>
+                    <td className="text-sm">{r.student.city ? `${r.student.city}, ${r.student.location}` : '—'}</td>
                     <td className="text-sm">{r.student.teacher||<span className="text-muted">{locale === 'ar' ? 'غير معين' : 'Unassigned'}</span>}</td>
                     <td><span className={`badge badge-${r.student.status === 'completed' ? 'completed' : 'active'}`}>{r.student.status === 'completed' ? t('completedHours') : t('activeTraining')}</span></td>
                     <td><strong>{r.visitCount}</strong></td>

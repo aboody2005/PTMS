@@ -101,6 +101,7 @@ const translations = {
     sideAssignments: 'Assignments',
     sideLocations: 'Locations',
     sideVisits: 'Show Visits',
+    sideStudentData: 'Student Data',
 
     // Profile Page
     personalInfo: 'Personal Information',
@@ -272,6 +273,7 @@ const translations = {
     sideAssignments: 'التعيينات والربط',
     sideLocations: 'مواقع الصيدليات',
     sideVisits: 'عرض الزيارات',
+    sideStudentData: 'بيانات الطلبة',
 
     // Profile Page
     personalInfo: 'المعلومات الشخصية',
