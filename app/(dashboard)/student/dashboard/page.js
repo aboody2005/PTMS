@@ -91,7 +91,15 @@ export default function StudentDashboard() {
       <div className="grid grid-4" style={{ marginBottom: 24 }}>
         {[
           { icon: '📋', label: t('statusLabel'), value: student?.status === 'completed' ? t('completedHours') : t('activeTraining'), color: 'var(--accent)', bg: 'var(--accent-dim)' },
-          { icon: '✅', label: t('totalVisits'), value: visits.length, color: 'var(--green)', bg: 'var(--green-dim)' },
+          {
+            icon: '✅',
+            label: locale === 'ar' ? 'حالة الزيارة' : 'Visit Status',
+            value: visits.length > 0
+              ? (locale === 'ar' ? 'تمت الزيارة' : 'Visited')
+              : (locale === 'ar' ? 'لم تتم الزيارة' : 'Not Visited'),
+            color: visits.length > 0 ? 'var(--green)' : 'var(--text-secondary)',
+            bg: visits.length > 0 ? 'var(--green-dim)' : 'var(--surface-alt)'
+          },
           { icon: '📅', label: locale === 'ar' ? 'الأيام المتبقية' : 'Days Remaining', value: days > 0 ? days : (days === 0 ? 0 : t('completedHours')), color: 'var(--yellow)', bg: 'var(--yellow-dim)' },
           { icon: '🏥', label: locale === 'ar' ? 'الصيدلية' : 'Pharmacy', value: student?.pharmacyName || (locale === 'ar' ? 'غير محدد' : 'Not set'), color: 'var(--purple)', bg: 'var(--purple-dim)' },
         ].map(({ icon, label, value, color, bg }) => (
