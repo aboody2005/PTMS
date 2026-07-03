@@ -74,7 +74,14 @@ export async function exportReportsExcel(reports, filename = 'student_reports', 
     ? ['ت', 'اسم الطالب', 'رقم هاتف الطالب', 'اسم الصيدلية', 'عنوان الصيدلية']
     : ['No.', 'Student Name', 'Student Phone', 'Pharmacy Name', 'Exact Address / Location'];
 
-  const rowsHtml = reports.map((r, idx) => {
+  // Sort registered students list by name (locale-aware)
+  const sortedReports = [...reports].sort((a, b) => {
+    const nameA = a.student?.name || '';
+    const nameB = b.student?.name || '';
+    return nameA.localeCompare(nameB, locale === 'ar' ? 'ar' : 'en', { sensitivity: 'accent' });
+  });
+
+  const rowsHtml = sortedReports.map((r, idx) => {
     const name = r.student.name || '&nbsp;';
     const phone = r.student.phone || '&nbsp;';
     const pharmacy = r.student.pharmacyName || '&nbsp;';
@@ -153,7 +160,14 @@ export async function exportReportsExcel(reports, filename = 'student_reports', 
       </tr>
     `;
 
-    unregisteredStudents.forEach((student, idx) => {
+    // Sort unregistered students list by name (locale-aware)
+    const sortedUnregistered = [...unregisteredStudents].sort((a, b) => {
+      const nameA = a.name || '';
+      const nameB = b.name || '';
+      return nameA.localeCompare(nameB, locale === 'ar' ? 'ar' : 'en', { sensitivity: 'accent' });
+    });
+
+    sortedUnregistered.forEach((student, idx) => {
       unregisteredRowsHtml += `
         <tr style="height: 35px;">
           <td style="border: 1px solid #000000; text-align: center; font-family: Arial, sans-serif; font-size: 18pt; padding: 4px; vertical-align: middle;">${idx + 1}</td>
