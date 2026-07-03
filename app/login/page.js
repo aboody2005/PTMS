@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -16,6 +16,15 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' && window.innerWidth < 640
+  );
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(''); setLoading(true);
@@ -30,28 +39,60 @@ export default function LoginPage() {
 
   return (
     <div className={styles.authWrapper}>
-      {/* Language toggle — right for EN, left for AR */}
-      <div style={{ position: 'absolute', top: 20, [locale === 'ar' ? 'left' : 'right']: 20, zIndex: 100 }}>
-        <button onClick={toggleLanguage} className="auth-lang-btn">
-          <span>🌐</span>
-          <span>{locale === 'en' ? 'العربية' : 'EN'}</span>
-        </button>
-      </div>
-
-      {/* Back to Home — opposite side of language button */}
-      <div style={{ position: 'absolute', top: 20, [locale === 'ar' ? 'right' : 'left']: 20, zIndex: 100 }}>
-        <Link
-          href="/"
-          className="auth-lang-btn"
-          style={{ textDecoration: 'none' }}
-        >
-          <span>{locale === 'ar' ? '→' : '←'}</span>
-          <span>{locale === 'ar' ? 'الرئيسية' : 'Home'}</span>
-        </Link>
-      </div>
-
       <div className={styles.authGlow} />
-      <div className={styles.authCard}>
+
+      {!isMobile && (
+        <>
+          {/* Desktop floating/absolute corner buttons */}
+          <div style={{ position: 'absolute', top: 20, [locale === 'ar' ? 'left' : 'right']: 20, zIndex: 100 }}>
+            <button onClick={toggleLanguage} className="auth-lang-btn">
+              <span>🌐</span>
+              <span>{locale === 'en' ? 'العربية' : 'EN'}</span>
+            </button>
+          </div>
+
+          <div style={{ position: 'absolute', top: 20, [locale === 'ar' ? 'right' : 'left']: 20, zIndex: 100 }}>
+            <Link
+              href="/"
+              className="auth-lang-btn"
+              style={{ textDecoration: 'none' }}
+            >
+              <span>{locale === 'ar' ? '→' : '←'}</span>
+              <span>{locale === 'ar' ? 'الرئيسية' : 'Home'}</span>
+            </Link>
+          </div>
+        </>
+      )}
+      
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', alignItems: 'center', gap: 16, zIndex: 1 }}>
+        {/* Navigation / Language Row (Mobile Only) */}
+        {isMobile && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '100%',
+            maxWidth: 460,
+            padding: '0 8px',
+            direction: locale === 'ar' ? 'rtl' : 'ltr'
+          }}>
+            <Link
+              href="/"
+              className="auth-lang-btn"
+              style={{ textDecoration: 'none' }}
+            >
+              <span>{locale === 'ar' ? '→' : '←'}</span>
+              <span>{locale === 'ar' ? 'الرئيسية' : 'Home'}</span>
+            </Link>
+
+            <button onClick={toggleLanguage} className="auth-lang-btn">
+              <span>🌐</span>
+              <span>{locale === 'en' ? 'العربية' : 'EN'}</span>
+            </button>
+          </div>
+        )}
+
+        <div className={styles.authCard} style={{ marginTop: 0 }}>
         <div className={styles.authHeader}>
           <Link href="/" className={styles.authLogo}>⚕️ {t('brandName')}</Link>
           <h1>{t('loginTitle')}</h1>
@@ -117,5 +158,6 @@ export default function LoginPage() {
 
       </div>
     </div>
+  </div>
   );
 }
