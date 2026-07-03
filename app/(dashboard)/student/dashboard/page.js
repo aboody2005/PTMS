@@ -45,12 +45,13 @@ export default function StudentDashboard() {
   }, []);
 
   const calcCompletion = () => {
-    if (student?.status === 'completed' || visits.length > 0) return 100;
+    if (visits.length > 0) return 100;
     if (!student || !user) return 0;
     const fields = [user.name, user.email, user.phone, user.gender, user.profileImage,
       student.university, student.pharmacyName, student.startDate, student.locationId];
     const filled = fields.filter(Boolean).length;
-    return Math.round((filled / fields.length) * 100);
+    const rawPct = Math.round((filled / fields.length) * 100);
+    return rawPct >= 100 ? 90 : rawPct;
   };
 
   const daysLeft = () => {
