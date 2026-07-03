@@ -66,7 +66,7 @@ export default function LoginPage() {
             <input
               className="form-control"
               type="email"
-              placeholder="you@example.com"
+              placeholder={locale === 'ar' ? 'البريد الالكتروني' : 'Email'}
               value={form.email}
               onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
               required

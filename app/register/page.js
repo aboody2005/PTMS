@@ -209,6 +209,9 @@ export default function RegisterPage() {
     if (!nameConfirmed || !form.name) {
       return setError(locale === 'ar' ? 'يرجى اختيار اسمك من قائمة الطلبة الرسمية' : 'Please select your name from the official student list');
     }
+    if (!form.email.toLowerCase().endsWith('@hu.edu.iq')) {
+      return setError(locale === 'ar' ? 'البريد الإلكتروني يجب أن ينتهي بـ @hu.edu.iq' : 'Email must end with @hu.edu.iq');
+    }
     if (form.password !== form.confirmPassword) {
       return setError(locale === 'ar' ? 'كلمتا المرور غير متطابقتين' : 'Passwords do not match');
     }
@@ -417,11 +420,32 @@ export default function RegisterPage() {
               <input
                 className="form-control"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="email@hu.edu.iq"
                 value={form.email}
-                onChange={set('email')}
+                onChange={(e) => {
+                  // Strip anything that isn't a valid email ASCII character
+                  const clean = e.target.value.replace(/[^a-zA-Z0-9@._%+\-]/g, '');
+                  setForm((p) => ({ ...p, email: clean }));
+                }}
                 required
+                style={{
+                  borderColor: form.email && !form.email.toLowerCase().endsWith('@hu.edu.iq')
+                    ? '#ef4444'
+                    : undefined,
+                }}
               />
+              {form.email && !form.email.toLowerCase().endsWith('@hu.edu.iq') && (
+                <p style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: 4, marginBottom: 0 }}>
+                  {locale === 'ar'
+                    ? '⚠ البريد يجب أن ينتهي بـ @hu.edu.iq'
+                    : '⚠ Email must end with @hu.edu.iq'}
+                </p>
+              )}
+              {form.email && form.email.toLowerCase().endsWith('@hu.edu.iq') && (
+                <p style={{ fontSize: '0.75rem', color: '#22c55e', marginTop: 4, marginBottom: 0 }}>
+                  ✓ {locale === 'ar' ? 'بريد جامعي صالح' : 'Valid university email'}
+                </p>
+              )}
             </div>
 
             <div className="form-group">

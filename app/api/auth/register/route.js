@@ -31,6 +31,22 @@ export async function POST(req) {
       );
     }
 
+    // Email must be a university email
+    if (!email.toLowerCase().endsWith('@hu.edu.iq')) {
+      return NextResponse.json(
+        { error: 'البريد الإلكتروني يجب أن ينتهي بـ @hu.edu.iq' },
+        { status: 400 }
+      );
+    }
+
+    // Email must contain only ASCII (English) characters
+    if (/[^\x00-\x7F]/.test(email)) {
+      return NextResponse.json(
+        { error: 'البريد الإلكتروني يجب أن يحتوي على أحرف إنجليزية فقط' },
+        { status: 400 }
+      );
+    }
+
     const supabaseAdmin = getAdminClient();
     const targetRole = role || 'student';
 
