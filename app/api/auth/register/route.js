@@ -129,15 +129,32 @@ export async function POST(req) {
         }
       }
     }
-    // 4. Sync with official students list (fire-and-forget — don't block response)
+    // 4. Sync official_students — mark the matching row as registered directly
+    //    (done in-process to avoid the fragile fire-and-forget HTTP self-call)
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      fetch(`${baseUrl}/api/official-students/sync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, userId }),
-      }).catch(() => {}); // intentionally non-blocking
-    } catch (_) {}
+      const normalizedName = name.trim().toLowerCase();
+      const { data: officials } = await supabaseAdmin
+        .from('official_students')
+        .select('id, name');
+
+      const match = (officials || []).find(
+        (s) => s.name.trim().toLowerCase() === normalizedName
+      );
+
+      if (match) {
+        await supabaseAdmin
+          .from('official_students')
+          .update({
+            is_registered: true,
+            registered_at: new Date().toISOString(),
+            linked_user_id: userId,
+          })
+          .eq('id', match.id);
+      }
+    } catch (syncErr) {
+      // Non-fatal — log but don't block the response
+      console.error('Official student sync error:', syncErr);
+    }
 
     return NextResponse.json(
       { user: { id: userId, email, name, role: targetRole } },

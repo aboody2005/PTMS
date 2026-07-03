@@ -76,3 +76,63 @@ export async function POST(req) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+/**
+ * GET /api/official-students/sync
+ * Bulk re-sync: cross-references ALL official_students against profiles
+ * to repair stale is_registered flags (e.g. from historical data before the fix).
+ */
+export async function GET() {
+  try {
+    const supabase = getAdminClient();
+
+    // Load all official students and all student profiles in parallel
+    const [{ data: officials }, { data: profiles }] = await Promise.all([
+      supabase.from('official_students').select('id, name, is_registered, linked_user_id'),
+      supabase.from('profiles').select('id, name, created_at').eq('role', 'student'),
+    ]);
+
+    if (!officials || !profiles) {
+      return NextResponse.json({ error: 'Failed to load data' }, { status: 500 });
+    }
+
+    let updated = 0;
+    let cleared = 0;
+
+    for (const official of officials) {
+      const normalizedOfficial = official.name.trim().toLowerCase();
+      const matchingProfile = profiles.find(
+        (p) => p.name.trim().toLowerCase() === normalizedOfficial
+      );
+
+      if (matchingProfile && !official.is_registered) {
+        // Should be registered but isn't — fix it
+        await supabase
+          .from('official_students')
+          .update({
+            is_registered: true,
+            registered_at: matchingProfile.created_at,
+            linked_user_id: matchingProfile.id,
+          })
+          .eq('id', official.id);
+        updated++;
+      } else if (!matchingProfile && official.is_registered) {
+        // Marked as registered but the profile is gone — clear it
+        await supabase
+          .from('official_students')
+          .update({
+            is_registered: false,
+            registered_at: null,
+            linked_user_id: null,
+          })
+          .eq('id', official.id);
+        cleared++;
+      }
+    }
+
+    return NextResponse.json({ success: true, updated, cleared });
+  } catch (err) {
+    console.error('[official-students bulk sync]', err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}

@@ -83,6 +83,14 @@ function StatusDot({ registered }) {
 export default function StudentDataPage() {
   const { locale } = useTranslation();
   const ar = locale === 'ar';
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' && window.innerWidth < 640
+  );
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   /* ── State ── */
   const [students, setStudents] = useState([]);
@@ -111,24 +119,42 @@ export default function StudentDataPage() {
   const [importing, setImporting] = useState(false);
   const fileRef = useRef(null);
 
+  /* ── Sync state ── */
+  const [syncing, setSyncing] = useState(false);
+
   /* ──────────────────────────────────────────
-     Load
+     Load + auto-sync on mount
   ─────────────────────────────────────────── */
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
     try {
       const res = await fetch('/api/official-students');
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setStudents(data.students || []);
     } catch (err) {
-      toast.error(ar ? 'فشل تحميل بيانات الطلبة' : 'Failed to load student data');
+      if (!silent) toast.error(ar ? 'فشل تحميل بيانات الطلبة' : 'Failed to load student data');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [ar]);
 
-  useEffect(() => { load(); }, [load]);
+  // Auto-sync on mount: fetch list first, then silently sync registration
+  // status in the background and refresh the list once done.
+  useEffect(() => {
+    const init = async () => {
+      await load();
+      try {
+        await fetch('/api/official-students/sync');
+        // Reload silently so the UI updates without a visible spinner
+        await load({ silent: true });
+      } catch {
+        // Non-fatal — sync failure should never block the page
+      }
+    };
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* ──────────────────────────────────────────
      Derived data
@@ -299,6 +325,25 @@ export default function StudentDataPage() {
       toast.error(err.message);
     } finally {
       setBulkDeleting(false);
+    }
+  };
+
+  /* Sync All — repair stale is_registered flags */
+  const handleSyncAll = async () => {
+    setSyncing(true);
+    try {
+      const res = await fetch('/api/official-students/sync');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      const msg = ar
+        ? `تم تحديث ${data.updated} طالب وتصحيح ${data.cleared} إدخال`
+        : `Updated ${data.updated} student(s), cleared ${data.cleared} stale record(s)`;
+      toast.success(msg);
+      load();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -546,6 +591,14 @@ export default function StudentDataPage() {
               🗑 {ar ? `حذف ${selected.size} محدد` : `Delete ${selected.size} selected`}
             </button>
           )}
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={handleSyncAll}
+            disabled={syncing}
+            title={ar ? 'مزامنة حالة التسجيل مع قاعدة البيانات' : 'Re-sync registration status from database'}
+          >
+            {syncing ? '⏳' : '🔄'} {ar ? 'مزامنة الكل' : 'Sync All'}
+          </button>
           <button className="btn btn-secondary btn-sm" onClick={handleExport}>
             ⬇ {ar ? 'تصدير CSV' : 'Export CSV'}
           </button>
@@ -570,15 +623,15 @@ export default function StudentDataPage() {
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 12,
-            padding: '12px 20px',
+            gap: isMobile ? 8 : 12,
+            padding: isMobile ? '10px 12px' : '12px 20px',
             borderBottom: '1px solid var(--border)',
             background: 'var(--surface-alt, rgba(0,0,0,0.05))',
-            fontSize: '0.78rem',
+            fontSize: '0.75rem',
             fontWeight: 700,
             color: 'var(--text-muted)',
             textTransform: 'uppercase',
-            letterSpacing: '0.05em',
+            letterSpacing: '0.04em',
           }}>
             <input
               type="checkbox"
@@ -588,8 +641,8 @@ export default function StudentDataPage() {
               style={{ cursor: 'pointer', flexShrink: 0 }}
             />
             <span style={{ flex: 1 }}>{ar ? 'الطالب' : 'Student'}</span>
-            <span style={{ width: 160, textAlign: 'center' }}>{ar ? 'الحالة' : 'Status'}</span>
-            <span style={{ width: 100, textAlign: 'center' }}>{ar ? 'الإجراءات' : 'Actions'}</span>
+            {!isMobile && <span style={{ width: 160, textAlign: 'center' }}>{ar ? 'الحالة' : 'Status'}</span>}
+            <span style={{ width: isMobile ? 72 : 100, textAlign: 'center' }}>{ar ? 'إجراءات' : 'Actions'}</span>
           </div>
 
           {/* Rows */}
@@ -611,8 +664,8 @@ export default function StudentDataPage() {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 12,
-                  padding: '12px 20px',
+                  gap: isMobile ? 8 : 12,
+                  padding: isMobile ? '10px 12px' : '12px 20px',
                   borderBottom: idx < filtered.length - 1 ? '1px solid var(--border)' : 'none',
                   background: selected.has(s.id) ? 'var(--accent-dim)' : 'transparent',
                   transition: 'background 0.15s',
@@ -626,51 +679,88 @@ export default function StudentDataPage() {
                   style={{ cursor: 'pointer', flexShrink: 0 }}
                 />
 
-                {/* Avatar + Name */}
+                {/* Avatar + Name + mobile status */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+                  {/* Avatar with status dot on mobile */}
                   <div style={{
-                    width: 36, height: 36, borderRadius: 8,
+                    width: isMobile ? 32 : 36,
+                    height: isMobile ? 32 : 36,
+                    borderRadius: 8,
                     background: s.is_registered ? 'rgba(34,197,94,0.12)' : 'var(--border)',
                     color: s.is_registered ? '#22c55e' : 'var(--text-muted)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontWeight: 700, fontSize: '0.95rem', flexShrink: 0,
+                    fontWeight: 700, fontSize: '0.9rem', flexShrink: 0,
+                    position: 'relative',
                   }}>
                     {s.name.charAt(0)}
+                    {isMobile && (
+                      <span style={{
+                        position: 'absolute',
+                        bottom: -2, right: -2,
+                        width: 9, height: 9,
+                        borderRadius: '50%',
+                        background: s.is_registered ? '#22c55e' : 'var(--text-muted)',
+                        boxShadow: s.is_registered ? '0 0 5px #22c55e88' : 'none',
+                        border: '1.5px solid var(--surface)',
+                      }} />
+                    )}
                   </div>
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ margin: 0, fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <p style={{
+                      margin: 0,
+                      fontWeight: 600,
+                      fontSize: isMobile ? '0.82rem' : '0.875rem',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}>
                       {s.name}
                     </p>
-                    {s.registered_at && (
-                      <span className="text-muted" style={{ fontSize: '0.72rem', display: 'block' }}>
-                        {ar ? 'تسجيل: ' : 'Registered: '}{format(new Date(s.registered_at), 'dd/MM/yyyy')}
+                    {isMobile ? (
+                      <span style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        color: s.is_registered ? '#22c55e' : 'var(--text-muted)',
+                        display: 'block',
+                        marginTop: 1,
+                      }}>
+                        {s.is_registered ? (ar ? 'مسجّل ✓' : 'Registered ✓') : (ar ? 'غير مسجّل' : 'Not Registered')}
                       </span>
+                    ) : (
+                      s.registered_at && (
+                        <span className="text-muted" style={{ fontSize: '0.72rem', display: 'block' }}>
+                          {ar ? 'تسجيل: ' : 'Registered: '}{format(new Date(s.registered_at), 'dd/MM/yyyy')}
+                        </span>
+                      )
                     )}
                   </div>
                 </div>
 
-                {/* Status */}
-                <div style={{ width: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
-                  <StatusDot registered={s.is_registered} />
-                  <span style={{
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    color: s.is_registered ? '#22c55e' : 'var(--text-muted)',
-                    transition: 'color 0.3s',
-                  }}>
-                    {s.is_registered
-                      ? (ar ? 'مسجّل ✓' : 'Registered ✓')
-                      : (ar ? 'غير مسجّل' : 'Not Registered')}
-                  </span>
-                </div>
+                {/* Status column — desktop only */}
+                {!isMobile && (
+                  <div style={{ width: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+                    <StatusDot registered={s.is_registered} />
+                    <span style={{
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      color: s.is_registered ? '#22c55e' : 'var(--text-muted)',
+                      transition: 'color 0.3s',
+                    }}>
+                      {s.is_registered
+                        ? (ar ? 'مسجّل ✓' : 'Registered ✓')
+                        : (ar ? 'غير مسجّل' : 'Not Registered')}
+                    </span>
+                  </div>
+                )}
 
                 {/* Actions */}
-                <div style={{ width: 100, display: 'flex', gap: 6, justifyContent: 'center' }}>
+                <div style={{ width: isMobile ? 72 : 100, display: 'flex', gap: isMobile ? 4 : 6, justifyContent: 'center', flexShrink: 0 }}>
                   <button
                     className="btn btn-icon btn-secondary"
                     title={ar ? 'تعديل' : 'Edit'}
                     onClick={() => { setEditModal(s); setEditName(s.name); }}
-                    style={{ padding: '4px 8px', fontSize: '0.85rem' }}
+                    style={{ padding: isMobile ? '5px 7px' : '4px 8px', fontSize: '0.85rem' }}
                   >
                     ✏️
                   </button>
@@ -678,7 +768,7 @@ export default function StudentDataPage() {
                     className="btn btn-icon btn-secondary"
                     title={ar ? 'حذف' : 'Delete'}
                     onClick={() => setDeleteModal(s)}
-                    style={{ padding: '4px 8px', fontSize: '0.85rem', color: '#ef4444' }}
+                    style={{ padding: isMobile ? '5px 7px' : '4px 8px', fontSize: '0.85rem', color: '#ef4444' }}
                   >
                     🗑
                   </button>
