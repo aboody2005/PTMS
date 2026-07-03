@@ -234,7 +234,7 @@ export default function RegisterPage() {
   return (
     <div className={styles.authWrapper}>
       {/* Language toggle — right for EN, left for AR */}
-      <div style={{ position: 'fixed', top: 20, [locale === 'ar' ? 'left' : 'right']: 20, zIndex: 100 }}>
+      <div style={{ position: 'absolute', top: 20, [locale === 'ar' ? 'left' : 'right']: 20, zIndex: 100 }}>
         <button onClick={toggleLanguage} className="auth-lang-btn">
           <span>🌐</span>
           <span>{locale === 'en' ? 'العربية' : 'EN'}</span>
@@ -242,7 +242,7 @@ export default function RegisterPage() {
       </div>
 
       {/* Back to Home — opposite side of language button */}
-      <div style={{ position: 'fixed', top: 20, [locale === 'ar' ? 'right' : 'left']: 20, zIndex: 100 }}>
+      <div style={{ position: 'absolute', top: 20, [locale === 'ar' ? 'right' : 'left']: 20, zIndex: 100 }}>
         <Link
           href="/"
           className="auth-lang-btn"
