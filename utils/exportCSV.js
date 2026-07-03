@@ -93,33 +93,36 @@ export async function exportReportsExcel(reports, filename = 'student_reports', 
     `;
   }).join('');
 
-  // ── 2 summary rows below the data table ──────────────────────────────────
-  const cellStyle = 'border: 1px solid #000000; text-align: center; font-family: Arial, sans-serif; font-size: 18pt; padding: 6px; vertical-align: middle;';
-  const labelCellStyle = `${cellStyle} background-color: #0B57D0; color: #ffffff; font-weight: bold;`;
-  const supervisorLabel = isAr ? 'الدكتور المشرف' : 'Supervisor';
-  const countLabel      = isAr ? 'عدد الطلاب' : 'No. of Students';
-  const studentCount    = reports.length;
-  const empty           = '<td style="border: none;"></td>';
+  // ── 2 summary rows below the data table (only for teachers) ───────────────
+  let summaryRowsHtml = '';
+  if (teacherName) {
+    const cellStyle = 'border: 1px solid #000000; text-align: center; font-family: Arial, sans-serif; font-size: 18pt; padding: 6px; vertical-align: middle;';
+    const labelCellStyle = `${cellStyle} background-color: #0B57D0; color: #ffffff; font-weight: bold;`;
+    const supervisorLabel = isAr ? 'الدكتور المشرف' : 'Supervisor';
+    const countLabel      = isAr ? 'عدد الطلاب' : 'No. of Students';
+    const studentCount    = reports.length;
+    const empty           = '<td style="border: none;"></td>';
 
-  // Columns order in the HTML is: A(ت), B(اسم الطالب), C(هاتف), D(صيدلية), E(عنوان)
-  // Summary should appear only in cols B and C (index 1 and 2), others empty
-  const summaryRowsHtml = `
-    <tr style="height: 18px;"><td colspan="5" style="border: none;">&nbsp;</td></tr>
-    <tr style="height: 40px;">
-      ${empty}
-      <td style="${labelCellStyle}">${supervisorLabel}</td>
-      <td style="${labelCellStyle}">${countLabel}</td>
-      ${empty}
-      ${empty}
-    </tr>
-    <tr style="height: 40px;">
-      ${empty}
-      <td style="${cellStyle}">${teacherName || '&nbsp;'}</td>
-      <td style="${cellStyle}">${studentCount}</td>
-      ${empty}
-      ${empty}
-    </tr>
-  `;
+    // Columns order in the HTML is: A(ت), B(اسم الطالب), C(هاتف), D(صيدلية), E(عنوان)
+    // Summary should appear only in cols B and C (index 1 and 2), others empty
+    summaryRowsHtml = `
+      <tr style="height: 18px;"><td colspan="5" style="border: none;">&nbsp;</td></tr>
+      <tr style="height: 40px;">
+        ${empty}
+        <td style="${labelCellStyle}">${supervisorLabel}</td>
+        <td style="${labelCellStyle}">${countLabel}</td>
+        ${empty}
+        ${empty}
+      </tr>
+      <tr style="height: 40px;">
+        ${empty}
+        <td style="${cellStyle}">${teacherName}</td>
+        <td style="${cellStyle}">${studentCount}</td>
+        ${empty}
+        ${empty}
+      </tr>
+    `;
+  }
 
   // Generate rows for unregistered students table
   let unregisteredRowsHtml = '';
