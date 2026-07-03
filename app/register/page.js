@@ -304,7 +304,7 @@ export default function RegisterPage() {
 
         {error && <div className="alert alert-error">{error}</div>}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} autoComplete="off">
           <div className="grid grid-2" style={{ gap: 16 }}>
             <div className="form-group" style={{ position: 'relative' }}>
               <label className="form-label">{t('fullNameLabel')} *</label>
@@ -347,6 +347,7 @@ export default function RegisterPage() {
                       className="form-control"
                       placeholder={locale === 'ar' ? 'اكتب اسمك الأول للبحث...' : 'Type your first name to search...'}
                       value={nameQuery}
+                      autoComplete="new-password"
                       onChange={handleNameTyping}
                       onKeyDown={handleNameKeyDown}
                       onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
@@ -476,6 +477,7 @@ export default function RegisterPage() {
                 type="email"
                 placeholder="email@hu.edu.iq"
                 value={form.email}
+                autoComplete="new-password"
                 onChange={(e) => {
                   // Strip anything that isn't a valid email ASCII character
                   const clean = e.target.value.replace(/[^a-zA-Z0-9@._%+\-]/g, '');
@@ -511,6 +513,7 @@ export default function RegisterPage() {
                 value={form.phone}
                 maxLength={11}
                 required
+                autoComplete="new-password"
                 onChange={(e) => {
                   let val = e.target.value;
                   // Convert Arabic-Indic digits to Western digits
@@ -565,6 +568,7 @@ export default function RegisterPage() {
                   minLength={8}
                   maxLength={8}
                   required
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
@@ -602,6 +606,7 @@ export default function RegisterPage() {
                   minLength={8}
                   maxLength={8}
                   required
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"

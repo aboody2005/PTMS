@@ -101,7 +101,7 @@ export default function LoginPage() {
 
         {error && <div className="alert alert-error">{error}</div>}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} autoComplete="off">
           <div className="form-group">
             <label className="form-label">{t('emailLabel')}</label>
             <input
@@ -111,6 +111,7 @@ export default function LoginPage() {
               value={form.email}
               onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
               required
+              autoComplete="off"
             />
           </div>
           <div className="form-group">
@@ -123,6 +124,7 @@ export default function LoginPage() {
                 value={form.password}
                 onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
                 required
+                autoComplete="new-password"
               />
               <button
                 type="button"
