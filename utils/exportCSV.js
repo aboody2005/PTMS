@@ -41,7 +41,7 @@ export function exportReportsCSV(reports, filename = 'student_reports', locale =
   downloadCSV(csvContent, `${filename}_${format(new Date(), 'yyyyMMdd')}.csv`);
 }
 
-export async function exportReportsExcel(reports, filename = 'student_reports', locale = 'en') {
+export async function exportReportsExcel(reports, filename = 'student_reports', locale = 'en', unregisteredList = null, teacherName = '') {
   const isAr = locale === 'ar';
 
   let finalFilename = filename;
@@ -49,17 +49,21 @@ export async function exportReportsExcel(reports, filename = 'student_reports', 
     finalFilename = 'التدريب الصيفي كلية الصيدلة مرحلة رابعة';
   }
 
-  // Fetch unregistered students list
+  // Use provided list or fall back to fetching all unregistered (admin path)
   let unregisteredStudents = [];
-  try {
-    const res = await fetch('/api/official-students');
-    if (res.ok) {
-      const data = await res.json();
-      const allOfficial = data.students || [];
-      unregisteredStudents = allOfficial.filter(s => !s.is_registered);
+  if (unregisteredList !== null) {
+    unregisteredStudents = unregisteredList;
+  } else {
+    try {
+      const res = await fetch('/api/official-students');
+      if (res.ok) {
+        const data = await res.json();
+        const allOfficial = data.students || [];
+        unregisteredStudents = allOfficial.filter(s => !s.is_registered);
+      }
+    } catch (err) {
+      console.error('Error fetching unregistered students:', err);
     }
-  } catch (err) {
-    console.error('Error fetching unregistered students:', err);
   }
 
   const title = isAr
@@ -88,6 +92,34 @@ export async function exportReportsExcel(reports, filename = 'student_reports', 
       </tr>
     `;
   }).join('');
+
+  // ── 2 summary rows below the data table ──────────────────────────────────
+  const cellStyle = 'border: 1px solid #000000; text-align: center; font-family: Arial, sans-serif; font-size: 18pt; padding: 6px; vertical-align: middle;';
+  const labelCellStyle = `${cellStyle} background-color: #0B57D0; color: #ffffff; font-weight: bold;`;
+  const supervisorLabel = isAr ? 'الدكتور المشرف' : 'Supervisor';
+  const countLabel      = isAr ? 'عدد الطلاب' : 'No. of Students';
+  const studentCount    = reports.length;
+  const empty           = '<td style="border: none;"></td>';
+
+  // Columns order in the HTML is: A(ت), B(اسم الطالب), C(هاتف), D(صيدلية), E(عنوان)
+  // Summary should appear only in cols B and C (index 1 and 2), others empty
+  const summaryRowsHtml = `
+    <tr style="height: 18px;"><td colspan="5" style="border: none;">&nbsp;</td></tr>
+    <tr style="height: 40px;">
+      ${empty}
+      <td style="${labelCellStyle}">${supervisorLabel}</td>
+      <td style="${labelCellStyle}">${countLabel}</td>
+      ${empty}
+      ${empty}
+    </tr>
+    <tr style="height: 40px;">
+      ${empty}
+      <td style="${cellStyle}">${teacherName || '&nbsp;'}</td>
+      <td style="${cellStyle}">${studentCount}</td>
+      ${empty}
+      ${empty}
+    </tr>
+  `;
 
   // Generate rows for unregistered students table
   let unregisteredRowsHtml = '';
@@ -193,6 +225,8 @@ export async function exportReportsExcel(reports, filename = 'student_reports', 
         </tr>
         <!-- Data Rows -->
         ${rowsHtml}
+        <!-- Summary: teacher name + count -->
+        ${summaryRowsHtml}
         <!-- Unregistered Rows -->
         ${unregisteredRowsHtml}
       </table>

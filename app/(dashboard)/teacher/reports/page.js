@@ -27,7 +27,37 @@ export default function TeacherReports() {
   const handleExportExcel = async () => {
     const loadingToast = toast.loading(locale === 'ar' ? 'جاري تحضير ملف Excel...' : 'Preparing Excel...');
     try {
-      await exportReportsExcel(reports, locale === 'ar' ? 'تقرير_تدريب_الطلاب' : 'teacher_report', locale);
+      // Build a set of the teacher's registered student names (from the reports already loaded)
+      const registeredNames = new Set(
+        reports.map((r) => r.student.name?.trim().toLowerCase()).filter(Boolean)
+      );
+
+      // Fetch the full official_students list and filter to only this teacher's unregistered ones:
+      // an official student is "this teacher's" if their name matches one of the teacher's registered students
+      // OR if they are already unregistered but their name is in the teacher's roster.
+      // Simpler: fetch all official_students, keep those whose name is in registeredNames AND is_registered===false.
+      let teacherUnregistered = [];
+      try {
+        const res = await fetch('/api/official-students');
+        if (res.ok) {
+          const data = await res.json();
+          const all = data.students || [];
+          teacherUnregistered = all.filter(
+            (s) => !s.is_registered && registeredNames.has(s.name?.trim().toLowerCase())
+          );
+        }
+      } catch (_) {}
+
+      // Get teacher name from the first report entry
+      const teacherName = reports[0]?.student?.teacher || '';
+
+      await exportReportsExcel(
+        reports,
+        locale === 'ar' ? 'تقرير_تدريب_الطلاب' : 'teacher_report',
+        locale,
+        teacherUnregistered,
+        teacherName,
+      );
       toast.dismiss(loadingToast);
       toast.success(locale === 'ar' ? 'تم تحميل ملف Excel بنجاح!' : 'Excel downloaded successfully!');
     } catch (e) {
