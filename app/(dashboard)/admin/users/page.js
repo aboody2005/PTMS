@@ -192,13 +192,17 @@ export default function AdminUsers() {
         <div className="modal-overlay" onClick={() => setModal(false)}>
           <div className="modal" onClick={e=>e.stopPropagation()}>
             <div className="modal-header">
-              <h4>Create New User</h4>
+              <h4>{locale === 'ar' ? 'إنشاء مستخدم جديد' : 'Create New User'}</h4>
               <button onClick={() => setModal(false)} className="btn btn-icon btn-secondary">✕</button>
             </div>
             <form onSubmit={handleCreate}>
               <div className="modal-body">
                 <div className="grid grid-2" style={{gap:12}}>
-                  {[['Full Name', 'name', 'text'], ['Email', 'email', 'email'], ['Phone', 'phone', 'tel']].map(([l, k, t]) => (
+                  {[
+                    [locale === 'ar' ? 'الاسم الكامل' : 'Full Name', 'name', 'text'],
+                    [locale === 'ar' ? 'البريد الإلكتروني' : 'Email', 'email', 'email'],
+                    [locale === 'ar' ? 'رقم الهاتف' : 'Phone', 'phone', 'tel']
+                  ].map(([l, k, t]) => (
                     <div key={k} className="form-group" style={{ marginBottom: 12 }}>
                       <label className="form-label">{l}</label>
                       <input
@@ -222,7 +226,7 @@ export default function AdminUsers() {
                     </div>
                   ))}
                   <div className="form-group" style={{ marginBottom: 12 }}>
-                    <label className="form-label">Password</label>
+                    <label className="form-label">{locale === 'ar' ? 'كلمة المرور' : 'Password'}</label>
                     <div className="password-input-container">
                       <input className="form-control" type={showCreatePassword ? 'text' : 'password'} value={form.password} onChange={set('password')} required placeholder="••••••••" />
                       <button
@@ -240,26 +244,32 @@ export default function AdminUsers() {
                     </div>
                   </div>
                   <div className="form-group" style={{marginBottom:12}}>
-                    <label className="form-label">Role</label>
+                    <label className="form-label">{locale === 'ar' ? 'الدور' : 'Role'}</label>
                     <select className="form-control" value={form.role} onChange={set('role')}>
-                      <option value="student">Student</option>
-                      <option value="teacher">Teacher</option>
-                      <option value="admin">Admin</option>
+                      <option value="student">{locale === 'ar' ? 'طالب' : 'Student'}</option>
+                      <option value="teacher">{locale === 'ar' ? 'مشرف أكاديمي' : 'Teacher'}</option>
+                      <option value="admin">{locale === 'ar' ? 'مدير النظام' : 'Admin'}</option>
                     </select>
                   </div>
                   <div className="form-group" style={{marginBottom:12}}>
-                    <label className="form-label">Gender</label>
+                    <label className="form-label">{locale === 'ar' ? 'الجنس' : 'Gender'}</label>
                     <select className="form-control" value={form.gender} onChange={set('gender')}>
-                      <option value="">Select</option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
+                      <option value="">{locale === 'ar' ? 'اختر' : 'Select'}</option>
+                      <option value="male">{locale === 'ar' ? 'ذكر' : 'Male'}</option>
+                      <option value="female">{locale === 'ar' ? 'أنثى' : 'Female'}</option>
                     </select>
                   </div>
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Creating...' : 'Create User'}</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setModal(false)}>
+                  {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving 
+                    ? (locale === 'ar' ? 'جاري الإنشاء...' : 'Creating...') 
+                    : (locale === 'ar' ? 'إنشاء المستخدم' : 'Create User')}
+                </button>
               </div>
             </form>
           </div>
