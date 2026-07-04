@@ -52,16 +52,13 @@ export async function POST(req) {
 
     // 1. Validate name against official_students (students only)
     if (targetRole === 'student') {
-      const { data: officials } = await supabaseAdmin
+      const { data: match, error: matchError } = await supabaseAdmin
         .from('official_students')
-        .select('id, name, is_registered');
+        .select('id, name, is_registered')
+        .ilike('name', name.trim())
+        .maybeSingle();
 
-      const normalizedInput = name.trim().toLowerCase();
-      const match = (officials || []).find(
-        (s) => s.name.trim().toLowerCase() === normalizedInput
-      );
-
-      if (!match) {
+      if (matchError || !match) {
         return NextResponse.json(
           { error: 'اسمك غير موجود في قائمة الطلبة الرسمية. تواصل مع إدارة الجامعة.' },
           { status: 400 }
@@ -107,31 +104,29 @@ export async function POST(req) {
       );
 
     if (profileError) {
-      console.error('Profile upsert error:', profileError);
       // Don't fail the whole registration — the trigger may still fix it
     }
 
     // 3. If student, set locationId on the students row.
-    //    The trigger creates the students row, so retry up to 3 times with a short delay.
+    //    The trigger creates the students row, so retry with a short delay.
     if (targetRole === 'student' && locationId) {
       let studentUpdated = false;
-      for (let attempt = 0; attempt < 3; attempt++) {
+      for (let attempt = 0; attempt < 4; attempt++) {
         if (attempt > 0) {
-          // Wait 300ms before retrying (trigger may not have run yet)
-          await new Promise((r) => setTimeout(r, 300));
+          // Wait 50ms before retrying (trigger may not have run yet)
+          await new Promise((r) => setTimeout(r, 50));
         }
 
-        const { error: studentError } = await supabaseAdmin
+        const { data, error: studentError } = await supabaseAdmin
           .from('students')
           .update({ location_id: locationId })
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .select('id');
 
-        if (!studentError) {
+        if (!studentError && data && data.length > 0) {
           studentUpdated = true;
           break;
         }
-
-        console.warn(`Student location update attempt ${attempt + 1} failed:`, studentError.message);
       }
 
       if (!studentUpdated) {
@@ -141,21 +136,18 @@ export async function POST(req) {
           .insert({ user_id: userId, location_id: locationId });
 
         if (insertError) {
-          console.error('Student insert fallback error:', insertError);
+          // Fallback failed
         }
       }
     }
     // 4. Sync official_students — mark the matching row as registered directly
     //    (done in-process to avoid the fragile fire-and-forget HTTP self-call)
     try {
-      const normalizedName = name.trim().toLowerCase();
-      const { data: officials } = await supabaseAdmin
+      const { data: match } = await supabaseAdmin
         .from('official_students')
-        .select('id, name');
-
-      const match = (officials || []).find(
-        (s) => s.name.trim().toLowerCase() === normalizedName
-      );
+        .select('id')
+        .ilike('name', name.trim())
+        .maybeSingle();
 
       if (match) {
         await supabaseAdmin
@@ -168,8 +160,7 @@ export async function POST(req) {
           .eq('id', match.id);
       }
     } catch (syncErr) {
-      // Non-fatal — log but don't block the response
-      console.error('Official student sync error:', syncErr);
+      // Non-fatal
     }
 
     return NextResponse.json(
@@ -177,7 +168,6 @@ export async function POST(req) {
       { status: 200 }
     );
   } catch (err) {
-    console.error('Register route error:', err);
     return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
   }
 }

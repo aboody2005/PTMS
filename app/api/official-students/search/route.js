@@ -31,7 +31,6 @@ export async function GET(req) {
     if (error) throw error;
     return NextResponse.json({ suggestions: data || [] });
   } catch (err) {
-    console.error('[official-students search]', err);
     return NextResponse.json({ suggestions: [] });
   }
 }

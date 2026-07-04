@@ -211,14 +211,23 @@ export const api = {
       return { message: 'User updated' };
     },
 
-    /** Delete user — deleted from profiles table (trigger cleans up auth.users) */
+    /** Delete user — calls the secure backend route to remove them from Supabase Auth and database */
     delete: async (id) => {
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', id);
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
 
-      if (error) throwError(error, 'Failed to delete user');
+      const res = await fetch(`/api/users/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to delete user');
+      }
       return { message: 'User deleted successfully' };
     },
 

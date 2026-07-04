@@ -63,7 +63,9 @@ export function AuthProvider({ children }) {
           setUser(null);
           setLoading(false);
           setTimeout(() => {
-            window.location.href = '/login';
+            if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+              window.location.href = '/login';
+            }
           }, 0);
         } else if (event === 'TOKEN_REFRESHED' && session?.user) {
           setTimeout(async () => {
@@ -83,11 +85,16 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw new Error('Invalid email or password');
+    if (error) {
+      if (error.message === 'Invalid login credentials') {
+        throw new Error('Invalid email or password');
+      }
+      throw new Error(error.message);
+    }
     const profile = await fetchProfile(data.user);
     if (!profile) {
       await supabase.auth.signOut();
-      throw new Error('Your account is inactive');
+      throw new Error('No account found with this email or it has been deactivated.');
     }
     setUser(profile);
     return profile;
@@ -102,8 +109,6 @@ export function AuthProvider({ children }) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Registration failed');
-    // Wait for the Supabase trigger to create the profile row
-    await new Promise((r) => setTimeout(r, 600));
     return await login(email, password);
   };
 

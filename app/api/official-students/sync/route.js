@@ -29,14 +29,12 @@ export async function POST(req) {
     const supabase = getAdminClient();
     const normalizedName = name.trim().toLowerCase();
 
-    // Fetch all official students for comparison
-    const { data: officials } = await supabase
+    // Find matching official student directly
+    const { data: match } = await supabase
       .from('official_students')
-      .select('id, name');
-
-    const match = (officials || []).find(
-      (s) => s.name.trim().toLowerCase() === normalizedName
-    );
+      .select('id')
+      .ilike('name', name.trim())
+      .maybeSingle();
 
     if (match) {
       // Mark as registered
@@ -72,7 +70,6 @@ export async function POST(req) {
       return NextResponse.json({ matched: false });
     }
   } catch (err) {
-    console.error('[official-students sync]', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
