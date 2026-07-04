@@ -6,7 +6,7 @@ import { Toaster } from 'react-hot-toast';
 
 export const metadata = {
   title: 'PTMS – Pharmacy Training Management System',
-  description: 'A modern platform for managing pharmacy student training, supervision, and reporting in Iraq.',
+  description: 'A modern platform for managing pharmacy student training, supervision, and reporting in Al-Hadba\'a University.',
   keywords: 'pharmacy training, student management, Iraq pharmacy, training system',
   icons: {
     icon: '/icon.png',
