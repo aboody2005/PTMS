@@ -391,6 +391,7 @@ export default function StudentProfile() {
                 { value: '23:00', label: '11:00 مساءً' },
                 { value: '00:00', label: '12:00 منتصف الليل' },
               ];
+              const getIndex = (val) => timeSlots.findIndex(ts => ts.value === val);
               return (
                 <div className="form-group">
                   <label className="form-label" style={{ display: 'block', marginBottom: 8 }}>
@@ -402,18 +403,18 @@ export default function StudentProfile() {
                         {locale === 'ar' ? 'وقت بداية التواجد' : 'Start Time'}
                       </label>
                       <select
-                        className="form-control"
-                        value={studentForm.attendanceStart}
-                        disabled={isLocked}
-                        onChange={e => {
-                          const newStart = e.target.value;
-                          setStudentForm(p => ({
-                            ...p,
-                            attendanceStart: newStart,
-                            // clear end time if it is no longer strictly greater than the new start
-                            attendanceEnd: p.attendanceEnd && newStart && p.attendanceEnd <= newStart ? '' : p.attendanceEnd,
-                          }));
-                        }}
+                          className="form-control"
+                          value={studentForm.attendanceStart}
+                          disabled={isLocked}
+                          onChange={e => {
+                            const newStart = e.target.value;
+                            setStudentForm(p => ({
+                              ...p,
+                              attendanceStart: newStart,
+                              // clear end time if it is no longer strictly greater than the new start
+                              attendanceEnd: p.attendanceEnd && newStart && getIndex(p.attendanceEnd) <= getIndex(newStart) ? '' : p.attendanceEnd,
+                            }));
+                          }}
                       >
                         <option value="">{locale === 'ar' ? 'اختر وقت البداية' : 'Select start time'}</option>
                         {timeSlots
@@ -437,7 +438,7 @@ export default function StudentProfile() {
                         {timeSlots
                           .filter(ts => {
                             // Must be strictly greater than start time
-                            if (studentForm.attendanceStart && ts.value <= studentForm.attendanceStart) return false;
+                            if (studentForm.attendanceStart && getIndex(ts.value) <= getIndex(studentForm.attendanceStart)) return false;
                             return true;
                           })
                           .map(ts => (

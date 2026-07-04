@@ -224,8 +224,8 @@ export default function RegisterPage() {
     if (form.password !== form.confirmPassword) {
       return setError(locale === 'ar' ? 'كلمتا المرور غير متطابقتين' : 'Passwords do not match');
     }
-    if (form.password.length !== 8) {
-      return setError(locale === 'ar' ? 'كلمة المرور يجب أن تتكون من 8 أرقام بالضبط' : 'Password must be exactly 8 characters');
+    if (form.password.length < 8) {
+      return setError(locale === 'ar' ? 'يجب أن تتكون كلمة المرور من 8 أحرف على الأقل' : 'Password must be at least 8 characters');
     }
 
     setLoading(true);
@@ -566,7 +566,7 @@ export default function RegisterPage() {
                   value={form.password}
                   onChange={set('password')}
                   minLength={8}
-                  maxLength={8}
+                  maxLength={128}
                   required
                   autoComplete="new-password"
                 />
@@ -587,7 +587,7 @@ export default function RegisterPage() {
               {form.password.length > 0 && form.password.length < 8 && (
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4, marginBottom: 0 }}>
                   {locale === 'ar'
-                    ? `${8 - form.password.length} أرقام متبقية`
+                    ? `${8 - form.password.length} أحرف متبقية`
                     : `${8 - form.password.length} character(s) remaining`}
                 </p>
               )}
@@ -604,7 +604,7 @@ export default function RegisterPage() {
                   value={form.confirmPassword}
                   onChange={set('confirmPassword')}
                   minLength={8}
-                  maxLength={8}
+                  maxLength={128}
                   required
                   autoComplete="new-password"
                 />
