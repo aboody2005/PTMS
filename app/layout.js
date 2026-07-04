@@ -7,19 +7,9 @@ import { Toaster } from 'react-hot-toast';
 export const metadata = {
   title: 'PTMS – Pharmacy Training Management System',
   description: 'A modern platform for managing pharmacy student training, supervision, and reporting in Al-Hadba\'a University.',
-  keywords: 'pharmacy training, student management, Al-Hadba\'a University pharmacy, training system',
+  keywords: 'pharmacy training, student management, Iraq pharmacy, training system',
   icons: {
     icon: '/icon.png',
-  },
-  openGraph: {
-    title: 'PTMS – Pharmacy Training Management System',
-    description: 'A modern platform for managing pharmacy student training, supervision, and reporting in Al-Hadba\'a University.',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'PTMS – Pharmacy Training Management System',
-    description: 'A modern platform for managing pharmacy student training, supervision, and reporting in Al-Hadba\'a University.',
   },
 };
 
