@@ -27,14 +27,19 @@ export function AuthProvider({ children }) {
     let mounted = true;
 
     // 1. Restore session on first load
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!mounted) return;
-      if (session?.user) {
-        const profile = await fetchProfile(session.user);
-        if (mounted) setUser(profile);
-      }
-      if (mounted) setLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(async ({ data: { session } }) => {
+        if (!mounted) return;
+        if (session?.user) {
+          const profile = await fetchProfile(session.user);
+          if (mounted) setUser(profile);
+        }
+        if (mounted) setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Failed to restore auth session (network offline or blocked by ad-blocker):', err);
+        if (mounted) setLoading(false);
+      });
 
     // 2. Listen for auth events — callback MUST be synchronous for Supabase.
     //    Use setTimeout(0) to escape the internal Supabase lock before doing
