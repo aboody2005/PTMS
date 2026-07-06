@@ -28,7 +28,7 @@ export default function AdminAssignments() {
     async function load() {
       try {
         const [sRes, tRes, lRes] = await Promise.all([
-          api.students.list({ limit: 100 }),
+          api.students.list({ limit: 10000 }),
           api.teachers.list(),
           api.locations.list(),
         ]);
@@ -131,7 +131,7 @@ export default function AdminAssignments() {
       await api.students.update(editingStudent._id, payload);
       toast.success(locale === 'ar' ? 'تم تحديث بيانات الطالب بنجاح!' : 'Student updated successfully!');
       
-      const sRes = await api.students.list({ limit: 100 });
+      const sRes = await api.students.list({ limit: 10000 });
       setStudents(sRes.students || []);
       setEditingStudent(null);
     } catch (err) {
@@ -161,7 +161,7 @@ export default function AdminAssignments() {
         ? `✅ تم حفظ تاريخ الانتهاء وتحديثه لجميع الطلاب (${res?.modifiedCount || 0} طالب).`
         : `✅ End date saved and applied to all students (${res?.modifiedCount || 0} students).`
       );
-      const sRes = await api.students.list({ limit: 100 });
+      const sRes = await api.students.list({ limit: 10000 });
       setStudents(sRes.students || []);
     } catch (err) {
       toast.error(err.message);
