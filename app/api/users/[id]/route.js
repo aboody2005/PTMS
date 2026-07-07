@@ -113,3 +113,80 @@ export async function DELETE(req, { params }) {
     return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function PUT(req, { params }) {
+  try {
+    const { id } = await params;
+    if (!id) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    // 1. Authenticate the requester via the Authorization header token
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7); // Remove 'Bearer '
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    // Create client using user's own token to verify authenticity
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { persistSession: false },
+    });
+
+    const { data: { user }, error: authError } = await userClient.auth.getUser(token);
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // 2. Check if the requester is an active administrator in the database
+    const supabaseAdmin = getAdminClient();
+    const { data: requesterProfile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('role, is_active')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !requesterProfile || requesterProfile.role !== 'admin' || !requesterProfile.is_active) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // 3. Parse input body
+    const body = await req.json();
+    const { name, email, gender } = body;
+
+    // 4. Update auth.users if email is provided
+    if (email) {
+      const { error: authUpdateError } = await supabaseAdmin.auth.admin.updateUserById(id, {
+        email: email,
+        email_confirm: true, // Auto-confirm email change
+      });
+      if (authUpdateError) {
+        return NextResponse.json({ error: authUpdateError.message }, { status: 400 });
+      }
+    }
+
+    // 5. Update profiles table
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
+    if (gender !== undefined) updateData.gender = gender;
+    
+    if (Object.keys(updateData).length > 0) {
+      const { error: profileUpdateError } = await supabaseAdmin
+        .from('profiles')
+        .update(updateData)
+        .eq('id', id);
+      if (profileUpdateError) {
+        return NextResponse.json({ error: profileUpdateError.message }, { status: 400 });
+      }
+    }
+
+    return NextResponse.json({ message: 'User updated successfully' }, { status: 200 });
+  } catch (err) {
+    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
+  }
+}
+

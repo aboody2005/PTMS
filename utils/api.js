@@ -254,6 +254,27 @@ export const api = {
         resetTokenExpiry: expiry,
       };
     },
+
+    /** Update user details (admin only) — calls the secure backend route */
+    adminUpdate: async (id, body) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const res = await fetch(`/api/users/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update user');
+      }
+      return data;
+    },
   },
 
   // ── Students ──────────────────────────────────────────────

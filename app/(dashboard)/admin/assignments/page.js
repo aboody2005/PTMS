@@ -14,7 +14,7 @@ export default function AdminAssignments() {
   const [search, setSearch] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [editingStudent, setEditingStudent] = useState(null);
-  const [editForm, setEditForm] = useState({ startDate: '', endDate: '', status: '', teacherId: '', locationId: '', trainingDays: [] });
+  const [editForm, setEditForm] = useState({ startDate: '', endDate: '', status: '', teacherId: '', locationId: '', trainingDays: [], name: '', email: '', gender: '' });
   const [bulkEndDate, setBulkEndDate] = useState('');
   const [savedGlobalEndDate, setSavedGlobalEndDate] = useState('');
   const [bulkUpdating, setBulkUpdating] = useState(false);
@@ -84,6 +84,9 @@ export default function AdminAssignments() {
       teacherId: student.teacherId?._id || student.teacherId || '',
       locationId: student.locationId?._id || student.locationId || '',
       trainingDays: Array.isArray(student.trainingDays) ? student.trainingDays : [],
+      name: student.userId?.name || '',
+      email: student.userId?.email || '',
+      gender: student.userId?.gender || '',
     });
   };
 
@@ -128,6 +131,17 @@ export default function AdminAssignments() {
     e.preventDefault();
     setSaving(editingStudent._id);
     try {
+      // 1. Update user profile name, email, and gender if linked profile exists
+      const profileId = editingStudent.userId?._id || editingStudent.user_id;
+      if (profileId) {
+        await api.users.adminUpdate(profileId, {
+          name: editForm.name,
+          email: editForm.email,
+          gender: editForm.gender,
+        });
+      }
+
+      // 2. Update student training info
       const payload = {
         startDate: editForm.startDate || null,
         endDate: editForm.endDate || null,
@@ -822,9 +836,39 @@ export default function AdminAssignments() {
             </div>
             <form onSubmit={handleSaveEdit}>
               <div className="modal-body" style={{ display: 'block' }}>
-                <p style={{ marginBottom: 16 }}>
-                  <strong>{locale === 'ar' ? 'اسم الطالب:' : 'Student Name:'}</strong> {editingStudent.userId?.name}
-                </p>
+                <div className="form-group" style={{ marginBottom: 16 }}>
+                  <label className="form-label" style={{ color: 'var(--text-secondary)' }}>{t('fullNameLabel')}</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    required
+                    value={editForm.name}
+                    onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 16 }}>
+                  <label className="form-label" style={{ color: 'var(--text-secondary)' }}>{t('emailLabel')}</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    required
+                    value={editForm.email}
+                    onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 16 }}>
+                  <label className="form-label" style={{ color: 'var(--text-secondary)' }}>{t('genderLabel')}</label>
+                  <select
+                    className="form-control"
+                    required
+                    value={editForm.gender}
+                    onChange={e => setEditForm(p => ({ ...p, gender: e.target.value }))}
+                  >
+                    <option value="">{t('genderSelect')}</option>
+                    <option value="male">{t('genderMale')}</option>
+                    <option value="female">{t('genderFemale')}</option>
+                  </select>
+                </div>
                 <div className="form-group" style={{ marginBottom: 16 }}>
                   <label className="form-label" style={{ color: 'var(--text-secondary)' }}>{locale === 'ar' ? 'شهر التدريب' : 'Month of Training'}</label>
                   <select className="form-control" value={getEditTrainingMonthValue()} onChange={handleEditTrainingMonthChange}>
