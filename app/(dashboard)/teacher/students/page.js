@@ -70,7 +70,7 @@ export default function TeacherStudents() {
 
   const filtered = students
     .filter((s) => !search || s.userId?.name?.toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => (a.userId?.name || '').localeCompare(b.userId?.name || ''));
+    .sort((a, b) => (a.userId?.name || '').localeCompare(b.userId?.name || '', 'ar'));
 
   /** Open student details in visit mode (can confirm visit) */
   const openVisit = (s) => {

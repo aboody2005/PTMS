@@ -247,9 +247,15 @@ export default function AdminAssignments() {
 
   const filtered = students
     .filter(s => {
+      const loc = getLocationDisplay(s);
+      const locString = loc ? `${loc.city} ${loc.region || ''}` : '';
+      const pharmacy = s.pharmacyName || '';
+
       const matchSearch = !search ||
         s.userId?.name?.toLowerCase().includes(search.toLowerCase()) ||
-        s.userId?.email?.toLowerCase().includes(search.toLowerCase());
+        s.userId?.email?.toLowerCase().includes(search.toLowerCase()) ||
+        pharmacy.toLowerCase().includes(search.toLowerCase()) ||
+        locString.toLowerCase().includes(search.toLowerCase());
 
       // Compare location: check exact ID match or fall back to matching by city & name/region
       // to handle duplicate or deactivated locations gracefully.
@@ -300,7 +306,7 @@ export default function AdminAssignments() {
         const orderB = statusOrder[b.status] || 3;
         if (orderA !== orderB) return orderA - orderB;
       }
-      return (a.userId?.name || '').localeCompare(b.userId?.name || '');
+      return (a.userId?.name || '').localeCompare(b.userId?.name || '', 'ar');
     });
 
   return (

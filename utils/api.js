@@ -329,7 +329,7 @@ export const api = {
       processed.sort((a, b) => {
         const aProfile = Array.isArray(a.profiles) ? a.profiles[0] : a.profiles;
         const bProfile = Array.isArray(b.profiles) ? b.profiles[0] : b.profiles;
-        return (aProfile?.name || '').localeCompare(bProfile?.name || '');
+        return (aProfile?.name || '').localeCompare(bProfile?.name || '', 'ar');
       });
 
       const total = processed.length;

@@ -46,7 +46,13 @@ export default function AdminReports() {
 
   const filtered = reports
     .filter(r => {
-      const matchSearch = !search || r.student.name?.toLowerCase().includes(search.toLowerCase()) || r.student.email?.toLowerCase().includes(search.toLowerCase());
+      const locStr = `${r.student.city || ''} ${r.student.location || ''}`;
+      const pharmacy = r.student.pharmacyName || '';
+      const matchSearch = !search ||
+        r.student.name?.toLowerCase().includes(search.toLowerCase()) ||
+        r.student.email?.toLowerCase().includes(search.toLowerCase()) ||
+        pharmacy.toLowerCase().includes(search.toLowerCase()) ||
+        locStr.toLowerCase().includes(search.toLowerCase());
       const matchStatus = !statusFilter || r.student.status === statusFilter;
       let matchLocation = !locationFilter;
       if (locationFilter) {
@@ -66,7 +72,7 @@ export default function AdminReports() {
       }
       return matchSearch && matchStatus && matchLocation;
     })
-    .sort((a, b) => (a.student.name || '').localeCompare(b.student.name || ''));
+    .sort((a, b) => (a.student.name || '').localeCompare(b.student.name || '', 'ar'));
 
   if (loading) return <div className="flex-center" style={{height:300}}><div className="spinner" /></div>;
 
