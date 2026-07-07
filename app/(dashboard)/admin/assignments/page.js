@@ -23,6 +23,14 @@ export default function AdminAssignments() {
   const [monthFilter, setMonthFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [sortBy, setSortBy] = useState('name');
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -424,32 +432,34 @@ export default function AdminAssignments() {
       ) : (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
 
-          {/* ── Header row ── */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '2fr 1.4fr 220px 200px 52px',
-            gap: 0,
-            padding: '10px 0',
-            borderBottom: '2px solid var(--border)',
-            background: 'var(--surface-alt, rgba(0,0,0,0.05))',
-          }}>
-            {[
-              locale === 'ar' ? 'الطالب' : 'Student',
-              locale === 'ar' ? 'الصيدلية / الموقع' : 'Pharmacy / Location',
-              locale === 'ar' ? 'المشرف الحالي' : 'Current Teacher',
-              locale === 'ar' ? 'تعيين مشرف' : 'Assign Teacher',
-              '',
-            ].map((label, i) => (
-              <div key={i} style={{
-                padding: '0 16px',
-                fontSize: '0.7rem', fontWeight: 800,
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase', letterSpacing: '0.06em',
-              }}>
-                {label}
-              </div>
-            ))}
-          </div>
+          {/* ── Header row (Only on Desktop) ── */}
+          {!isMobile && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '2fr 1.4fr 220px 200px 52px',
+              gap: 0,
+              padding: '10px 0',
+              borderBottom: '2px solid var(--border)',
+              background: 'var(--surface-alt, rgba(0,0,0,0.05))',
+            }}>
+              {[
+                locale === 'ar' ? 'الطالب' : 'Student',
+                locale === 'ar' ? 'الصيدلية / الموقع' : 'Pharmacy / Location',
+                locale === 'ar' ? 'المشرف الحالي' : 'Current Teacher',
+                locale === 'ar' ? 'تعيين مشرف' : 'Assign Teacher',
+                '',
+              ].map((label, i) => (
+                <div key={i} style={{
+                  padding: '0 16px',
+                  fontSize: '0.7rem', fontWeight: 800,
+                  color: 'var(--text-muted)',
+                  textTransform: 'uppercase', letterSpacing: '0.06em',
+                }}>
+                  {label}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* ── Empty state ── */}
           {filtered.length === 0 ? (
@@ -477,6 +487,161 @@ export default function AdminAssignments() {
               const initials = (s.userId?.name || '?').charAt(0).toUpperCase();
               const statusColor = isCompleted ? '#6366f1' : '#22c55e';
               const statusBg   = isCompleted ? 'rgba(99,102,241,0.12)' : 'rgba(34,197,94,0.12)';
+
+              if (isMobile) {
+                return (
+                  <div
+                    key={s._id}
+                    style={{
+                      padding: '16px',
+                      borderBottom: idx < filtered.length - 1 ? '1px solid var(--border)' : 'none',
+                      background: 'transparent',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12,
+                    }}
+                  >
+                    {/* Top row: Avatar + Identity + Edit */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                        {/* Avatar */}
+                        <div style={{
+                          width: 42, height: 42, borderRadius: 10, flexShrink: 0,
+                          background: statusBg, color: statusColor,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontWeight: 800, fontSize: '1.05rem',
+                          border: `2px solid ${statusColor}30`,
+                        }}>
+                          {initials}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          {/* Name + Badges */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
+                            <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                              {s.userId?.name || '—'}
+                            </span>
+                            <span style={{
+                              fontSize: '10px', padding: '2px 8px', borderRadius: 99,
+                              fontWeight: 700, background: statusBg, color: statusColor,
+                            }}>
+                              {isCompleted ? (locale === 'ar' ? '🏁 مكتمل' : '🏁 Done') : (locale === 'ar' ? '✅ نشط' : '✅ Active')}
+                            </span>
+                            {monthLabel && (
+                              <span style={{
+                                fontSize: '10px', padding: '2px 8px', borderRadius: 99,
+                                fontWeight: 600, background: 'rgba(245,158,11,0.12)', color: '#f59e0b',
+                              }}>
+                                📅 {monthLabel}
+                              </span>
+                            )}
+                          </div>
+                          {/* Email */}
+                          <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {s.userId?.email}
+                          </p>
+                          {/* University */}
+                          {s.university && (
+                            <p style={{ margin: '3px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              🎓 {s.university}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Edit icon */}
+                      <button
+                        className="btn btn-icon btn-secondary"
+                        title={locale === 'ar' ? 'تعديل' : 'Edit'}
+                        onClick={() => openEditModal(s)}
+                        style={{ padding: '8px 10px', fontSize: '1rem', flexShrink: 0 }}
+                      >
+                        ✏️
+                      </button>
+                    </div>
+
+                    {/* Middle: Location block */}
+                    <div style={{
+                      padding: '10px 12px',
+                      background: 'var(--surface-alt, rgba(0,0,0,0.03))',
+                      borderRadius: 8,
+                      fontSize: '0.82rem',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: 'var(--text-primary)' }}>
+                        <span>🏥</span>
+                        <span>{s.pharmacyName || (locale === 'ar' ? 'غير محدد' : 'Not set')}</span>
+                      </div>
+                      {loc && (
+                        <div style={{ margin: '4px 0 0 20px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                          📍 {loc.city}{loc.region ? ` — ${loc.region}` : ''}
+                        </div>
+                      )}
+                      {/* Training days */}
+                      {Array.isArray(s.trainingDays) && s.trainingDays.length > 0 && (
+                        <div style={{ margin: '6px 0 0 20px', fontSize: '0.74rem', color: 'var(--accent)', fontWeight: 600 }}>
+                          🗓️ {s.trainingDays.length === 7
+                            ? (locale === 'ar' ? 'كل الأيام' : 'All Days')
+                            : s.trainingDays.map(d => ({
+                                sunday: 'الأحد', monday: 'الاثنين', tuesday: 'الثلاثاء',
+                                wednesday: 'الأربعاء', thursday: 'الخميس', friday: 'الجمعة', saturday: 'السبت',
+                              })[d] || d).join('، ')}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bottom: Teacher info & Assign dropdown */}
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 12,
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      borderTop: '1px dashed var(--border)',
+                      paddingTop: 10,
+                    }}>
+                      {/* Current Teacher */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                          {locale === 'ar' ? 'المشرف:' : 'Teacher:'}
+                        </span>
+                        {teacherName ? (
+                          <span style={{
+                            fontSize: '0.78rem', fontWeight: 700,
+                            background: 'rgba(99,102,241,0.12)', color: '#6366f1',
+                            padding: '4px 10px', borderRadius: 6,
+                          }}>
+                            👨‍🏫 {teacherName}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                            {locale === 'ar' ? 'غير معين' : 'Unassigned'}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Dropdown to assign */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: '1 1 150px', maxWidth: '200px' }}>
+                        <select
+                          className="form-control"
+                          style={{ fontSize: '0.8rem', padding: '6px 8px', width: '100%' }}
+                          value={teacherIdVal}
+                          onChange={e => assign(s._id, e.target.value)}
+                          disabled={saving === s._id}
+                        >
+                          <option value="">{locale === 'ar' ? '— تعيين مشرف —' : '— Assign —'}</option>
+                          {teachers.map(t => (
+                            <option key={t._id} value={t._id}>{t.name}</option>
+                          ))}
+                        </select>
+                        {saving === s._id && (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                            ⏳
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
 
               return (
                 <div
