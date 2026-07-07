@@ -69,7 +69,15 @@ export default function TeacherStudents() {
   }, [page, locationFilter]);
 
   const filtered = students
-    .filter((s) => !search || s.userId?.name?.toLowerCase().includes(search.toLowerCase()))
+    .filter((s) => {
+      const locStr = s.locationId ? `${s.locationId.city} ${s.locationId.region || s.locationId.name || ''}` : '';
+      const pharmacy = s.pharmacyName || '';
+      return !search ||
+        s.userId?.name?.toLowerCase().includes(search.toLowerCase()) ||
+        s.userId?.email?.toLowerCase().includes(search.toLowerCase()) ||
+        pharmacy.toLowerCase().includes(search.toLowerCase()) ||
+        locStr.toLowerCase().includes(search.toLowerCase());
+    })
     .sort((a, b) => (a.userId?.name || '').localeCompare(b.userId?.name || '', 'ar'));
 
   /** Open student details in visit mode (can confirm visit) */

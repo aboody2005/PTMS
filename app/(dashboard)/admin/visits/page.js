@@ -113,9 +113,13 @@ export default function AdminVisits() {
 
   /* ─── Filter ─── */
   const filtered = rows.filter(r => {
+    const locStr = r.location ? `${r.location.city} ${r.location.region || ''}` : '';
+    const pharmacy = r.pharmacyName || '';
     const matchSearch = !search ||
       r.name.toLowerCase().includes(search.toLowerCase()) ||
-      r.email.toLowerCase().includes(search.toLowerCase());
+      r.email.toLowerCase().includes(search.toLowerCase()) ||
+      pharmacy.toLowerCase().includes(search.toLowerCase()) ||
+      locStr.toLowerCase().includes(search.toLowerCase());
     const matchStatus =
       filterStatus === 'all' ? true :
       filterStatus === 'visited' ? r.isVisited :
