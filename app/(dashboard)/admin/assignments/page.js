@@ -203,8 +203,13 @@ export default function AdminAssignments() {
 
   const filtered = students
     .filter(s => {
-      const matchSearch = !search || s.userId?.name?.toLowerCase().includes(search.toLowerCase());
-      const matchLocation = !locationFilter || s.locationId?._id === locationFilter;
+      const matchSearch = !search ||
+        s.userId?.name?.toLowerCase().includes(search.toLowerCase()) ||
+        s.userId?.email?.toLowerCase().includes(search.toLowerCase());
+
+      // locationId may be a populated object OR a plain string ID
+      const studentLocationId = s.locationId?._id || s.locationId || '';
+      const matchLocation = !locationFilter || studentLocationId === locationFilter;
       
       const sMonth = getStudentMonth(s);
       const matchMonth = !monthFilter || sMonth === monthFilter;

@@ -177,9 +177,22 @@ export default function AdminUsers() {
             <button disabled={page===1} onClick={() => setPage(p=>p-1)}>
               {locale === 'ar' ? 'السابق →' : '← Prev'}
             </button>
-            {Array.from({length:totalPages},(_,i)=>(
-              <button key={i} className={page===i+1?'active':''} onClick={()=>setPage(i+1)}>{i+1}</button>
-            ))}
+            {(() => {
+              const pages = [];
+              const delta = 2;
+              const left = Math.max(2, page - delta);
+              const right = Math.min(totalPages - 1, page + delta);
+              pages.push(1);
+              if (left > 2) pages.push('...');
+              for (let i = left; i <= right; i++) pages.push(i);
+              if (right < totalPages - 1) pages.push('...');
+              if (totalPages > 1) pages.push(totalPages);
+              return pages.map((p, idx) =>
+                p === '...'
+                  ? <span key={`e${idx}`} style={{padding:'0 6px',color:'var(--text-muted)',alignSelf:'center'}}>…</span>
+                  : <button key={p} className={page===p?'active':''} onClick={()=>setPage(p)}>{p}</button>
+              );
+            })()}
             <button disabled={page===totalPages} onClick={() => setPage(p=>p+1)}>
               {locale === 'ar' ? '← التالي' : 'Next →'}
             </button>
