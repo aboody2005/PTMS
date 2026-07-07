@@ -85,7 +85,7 @@ export default function StudentProfile() {
 
       const newLoc = data.location;
       setLocations(prev => [...prev, newLoc]);
-      setStudentForm(prev => ({ ...prev, locationId: newLoc._id }));
+      setStudentForm(prev => ({ ...prev, locationId: newLoc.id || newLoc._id }));
       setNewLocationModal(false);
       setNewLocForm({ name: '', city: '', region: '' });
       toast.success(locale === 'ar' ? 'تم إنشاء موقع الصيدلية وتحديده بنجاح!' : 'Location created and selected!');
@@ -459,7 +459,7 @@ export default function StudentProfile() {
                 onChange={e => setStudentForm(p => ({ ...p, locationId: e.target.value }))} disabled={isLocked}>
                 <option value="">{locale === 'ar' ? 'اختر الموقع...' : 'Select location...'}</option>
                 {locations.map(l => (
-                  <option key={l._id} value={l._id}>{l.city} — {l.region || l.name}</option>
+                  <option key={l.id || l._id} value={l.id || l._id}>{l.city} — {l.region || l.name}</option>
                 ))}
               </select>
               {!isLocked && (

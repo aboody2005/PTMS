@@ -48,7 +48,22 @@ export default function AdminReports() {
     .filter(r => {
       const matchSearch = !search || r.student.name?.toLowerCase().includes(search.toLowerCase()) || r.student.email?.toLowerCase().includes(search.toLowerCase());
       const matchStatus = !statusFilter || r.student.status === statusFilter;
-      const matchLocation = !locationFilter || r.student.locationId === locationFilter;
+      let matchLocation = !locationFilter;
+      if (locationFilter) {
+        const selectedLoc = locations.find(l => String(l._id) === locationFilter);
+        if (selectedLoc) {
+          const sCity = String(r.student.city || '').trim().toLowerCase();
+          const sLocName = String(r.student.location || '').trim().toLowerCase();
+          const fCity = String(selectedLoc.city || '').trim().toLowerCase();
+          const fLocName = String(selectedLoc.name || '').trim().toLowerCase();
+          if (sCity === fCity && sLocName === fLocName) {
+            matchLocation = true;
+          }
+        }
+        if (!matchLocation) {
+          matchLocation = r.student.locationId === locationFilter;
+        }
+      }
       return matchSearch && matchStatus && matchLocation;
     })
     .sort((a, b) => (a.student.name || '').localeCompare(b.student.name || ''));
