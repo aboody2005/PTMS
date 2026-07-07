@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { api } from '@/utils/api';
 import toast from 'react-hot-toast';
 import { useTranslation } from '@/context/LanguageContext';
@@ -9,9 +9,6 @@ const EMPTY_FORM = { name: '', email: '', password: '', role: 'student', phone: 
 export default function AdminUsers() {
   const { locale, t } = useTranslation();
   const [users, setUsers] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [loading, setLoading] = useState(true);
@@ -53,25 +50,28 @@ export default function AdminUsers() {
   const load = async () => {
     setLoading(true);
     try {
-      const params = { page, limit: 10 };
-      if (roleFilter) params.role = roleFilter;
-      if (search) params.search = search;
-      const data = await api.users.list(params);
+      // Load all users at once — filter client-side
+      const data = await api.users.list({ page: 1, limit: 10000 });
       setUsers(data.users || []);
-      setTotal(data.total || 0);
-      setTotalPages(data.totalPages || 1);
     } catch {}
     finally { setLoading(false); }
   };
 
   useEffect(() => {
-    Promise.resolve().then(() => {
-      load();
-    });
+    load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, roleFilter]);
+  }, []);
 
-  const handleSearch = (e) => { e.preventDefault(); setPage(1); load(); };
+  // Client-side filtering
+  const filtered = useMemo(() => {
+    return users.filter(u => {
+      const matchSearch = !search ||
+        u.name?.toLowerCase().includes(search.toLowerCase()) ||
+        u.email?.toLowerCase().includes(search.toLowerCase());
+      const matchRole = !roleFilter || u.role === roleFilter;
+      return matchSearch && matchRole;
+    });
+  }, [users, search, roleFilter]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -100,104 +100,89 @@ export default function AdminUsers() {
   return (
     <div>
       <div className="page-header flex-between" style={{flexWrap:'wrap',gap:12}}>
-        <div><h1>{t('userMgmt')}</h1><p className="text-muted">{locale === 'ar' ? `إجمالي المستخدمين: ${total}` : `${total} total users`}</p></div>
+        <div>
+          <h1>{t('userMgmt')}</h1>
+          <p className="text-muted">
+            {locale === 'ar'
+              ? `إجمالي المستخدمين: ${users.length}${filtered.length !== users.length ? ` (يظهر: ${filtered.length})` : ''}`
+              : `${users.length} total users${filtered.length !== users.length ? ` (showing: ${filtered.length})` : ''}`}
+          </p>
+        </div>
         <button className="btn btn-primary" onClick={() => setModal(true)}>{t('addUser')}</button>
       </div>
 
       {/* Search & filter */}
-      <form onSubmit={handleSearch} style={{display:'flex',gap:12,marginBottom:20,flexWrap:'wrap'}}>
+      <div style={{display:'flex',gap:12,marginBottom:20,flexWrap:'wrap'}}>
         <div className="search-bar" style={{flex:1,minWidth:200}}>
           <span className="search-icon">🔍</span>
-          <input className="form-control" placeholder={locale === 'ar' ? 'البحث بالاسم...' : 'Search by name...'} value={search}
-            onChange={e => setSearch(e.target.value)} style={{paddingLeft:36}} />
+          <input
+            className="form-control"
+            placeholder={locale === 'ar' ? 'البحث بالاسم أو البريد الإلكتروني...' : 'Search by name or email...'}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{paddingLeft:36}}
+          />
         </div>
-        <select className="form-control" style={{width:160}} value={roleFilter}
-          onChange={e => { setRoleFilter(e.target.value); setPage(1); }}>
+        <select className="form-control" style={{width:180}} value={roleFilter}
+          onChange={e => setRoleFilter(e.target.value)}>
           <option value="">{t('roleFilter')}</option>
           <option value="student">{locale === 'ar' ? 'طالب' : 'Student'}</option>
           <option value="teacher">{locale === 'ar' ? 'مشرف أكاديمي' : 'Teacher'}</option>
           <option value="admin">{locale === 'ar' ? 'مدير النظام' : 'Admin'}</option>
         </select>
-        <button type="submit" className="btn btn-secondary">{locale === 'ar' ? 'بحث' : 'Search'}</button>
-      </form>
+      </div>
 
       {loading ? <div className="flex-center" style={{height:200}}><div className="spinner" /></div> : (
-        <>
-          <div className="table-wrapper card" style={{padding:0}}>
-            <table>
-              <thead>
-                <tr>
-                  <th>{locale === 'ar' ? 'الاسم' : 'Name'}</th>
-                  <th>{t('emailLabel')}</th>
-                  <th>{locale === 'ar' ? 'الدور' : 'Role'}</th>
-                  <th>{locale === 'ar' ? 'الهاتف' : 'Phone'}</th>
-                  <th>{locale === 'ar' ? 'الجنس' : 'Gender'}</th>
-                  <th>{locale === 'ar' ? 'تاريخ الانضمام' : 'Joined'}</th>
-                  <th>{t('actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.length === 0
-                  ? <tr><td colSpan={7} style={{textAlign:'center',padding:'32px',color:'var(--text-muted)'}}>{locale === 'ar' ? 'لم يتم العثور على مستخدمين.' : 'No users found.'}</td></tr>
-                  : users.map(u => (
-                    <tr key={u._id}>
-                      <td style={{fontWeight:600,fontSize:'0.875rem'}}>{u.name}</td>
-                      <td className="text-sm">
-                        <div>{u.email}</div>
-                        {u.resetToken && new Date(u.resetTokenExpiry) > new Date() && (
-                          <span className="badge badge-warning" style={{ fontSize: '10px', padding: '2px 6px', marginTop: 4, display: 'inline-block' }}>
-                            {locale === 'ar' ? '🔑 رمز نشط' : '🔑 Active Token'}
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        <span className={`badge badge-${u.role==='admin'?'error':u.role==='teacher'?'info':'success'}`}>
-                          {u.role === 'admin' ? t('roleAdmin') : u.role === 'teacher' ? t('roleTeacher') : t('roleStudent')}
+        <div className="table-wrapper card" style={{padding:0}}>
+          <table>
+            <thead>
+              <tr>
+                <th>{locale === 'ar' ? 'الاسم' : 'Name'}</th>
+                <th>{t('emailLabel')}</th>
+                <th>{locale === 'ar' ? 'الدور' : 'Role'}</th>
+                <th>{locale === 'ar' ? 'الهاتف' : 'Phone'}</th>
+                <th>{locale === 'ar' ? 'الجنس' : 'Gender'}</th>
+                <th>{locale === 'ar' ? 'تاريخ الانضمام' : 'Joined'}</th>
+                <th>{t('actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0
+                ? <tr><td colSpan={7} style={{textAlign:'center',padding:'32px',color:'var(--text-muted)'}}>{locale === 'ar' ? 'لم يتم العثور على مستخدمين.' : 'No users found.'}</td></tr>
+                : filtered.map(u => (
+                  <tr key={u._id}>
+                    <td style={{fontWeight:600,fontSize:'0.875rem'}}>{u.name}</td>
+                    <td className="text-sm">
+                      <div>{u.email}</div>
+                      {u.resetToken && new Date(u.resetTokenExpiry) > new Date() && (
+                        <span className="badge badge-warning" style={{ fontSize: '10px', padding: '2px 6px', marginTop: 4, display: 'inline-block' }}>
+                          {locale === 'ar' ? '🔑 رمز نشط' : '🔑 Active Token'}
                         </span>
-                      </td>
-                      <td className="text-sm text-muted">{u.phone || '—'}</td>
-                      <td className="text-sm text-muted">
-                        {u.gender === 'male' ? t('genderMale') : u.gender === 'female' ? t('genderFemale') : u.gender || '—'}
-                      </td>
-                      <td className="text-xs text-muted">{new Date(u.createdAt).toLocaleDateString()}</td>
-                      <td>
-                        <button className="btn btn-secondary btn-sm" onClick={() => openTokenModal(u)} style={{ marginRight: 8, marginLeft: 8 }}>
-                          {locale === 'ar' ? '🔑 الرمز' : '🔑 Token'}
-                        </button>
-                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete(u._id, u.name)} disabled={deleting === u._id}>
-                          {deleting === u._id ? '...' : '🗑️'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="pagination">
-            <button disabled={page===1} onClick={() => setPage(p=>p-1)}>
-              {locale === 'ar' ? 'السابق →' : '← Prev'}
-            </button>
-            {(() => {
-              const pages = [];
-              const delta = 2;
-              const left = Math.max(2, page - delta);
-              const right = Math.min(totalPages - 1, page + delta);
-              pages.push(1);
-              if (left > 2) pages.push('...');
-              for (let i = left; i <= right; i++) pages.push(i);
-              if (right < totalPages - 1) pages.push('...');
-              if (totalPages > 1) pages.push(totalPages);
-              return pages.map((p, idx) =>
-                p === '...'
-                  ? <span key={`e${idx}`} style={{padding:'0 6px',color:'var(--text-muted)',alignSelf:'center'}}>…</span>
-                  : <button key={p} className={page===p?'active':''} onClick={()=>setPage(p)}>{p}</button>
-              );
-            })()}
-            <button disabled={page===totalPages} onClick={() => setPage(p=>p+1)}>
-              {locale === 'ar' ? '← التالي' : 'Next →'}
-            </button>
-          </div>
-        </>
+                      )}
+                    </td>
+                    <td>
+                      <span className={`badge badge-${u.role==='admin'?'error':u.role==='teacher'?'info':'success'}`}>
+                        {u.role === 'admin' ? t('roleAdmin') : u.role === 'teacher' ? t('roleTeacher') : t('roleStudent')}
+                      </span>
+                    </td>
+                    <td className="text-sm text-muted">{u.phone || '—'}</td>
+                    <td className="text-sm text-muted">
+                      {u.gender === 'male' ? t('genderMale') : u.gender === 'female' ? t('genderFemale') : u.gender || '—'}
+                    </td>
+                    <td className="text-xs text-muted">{new Date(u.createdAt).toLocaleDateString()}</td>
+                    <td>
+                      <button className="btn btn-secondary btn-sm" onClick={() => openTokenModal(u)} style={{ marginRight: 8, marginLeft: 8 }}>
+                        {locale === 'ar' ? '🔑 الرمز' : '🔑 Token'}
+                      </button>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(u._id, u.name)} disabled={deleting === u._id}>
+                        {deleting === u._id ? '...' : '🗑️'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {/* Create Modal */}
@@ -279,8 +264,8 @@ export default function AdminUsers() {
                   {locale === 'ar' ? 'إلغاء' : 'Cancel'}
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving 
-                    ? (locale === 'ar' ? 'جاري الإنشاء...' : 'Creating...') 
+                  {saving
+                    ? (locale === 'ar' ? 'جاري الإنشاء...' : 'Creating...')
                     : (locale === 'ar' ? 'إنشاء المستخدم' : 'Create User')}
                 </button>
               </div>
