@@ -102,6 +102,7 @@ const translations = {
     sideLocations: 'Locations',
     sideVisits: 'Show Visits',
     sideStudentData: 'Student Data',
+    sideIncompleteData: 'Incomplete Data',
 
     // Profile Page
     personalInfo: 'Personal Information',
@@ -274,6 +275,7 @@ const translations = {
     sideLocations: 'مواقع الصيدليات',
     sideVisits: 'عرض الزيارات',
     sideStudentData: 'بيانات الطلبة',
+    sideIncompleteData: 'البيانات الغير مكتملة',
 
     // Profile Page
     personalInfo: 'المعلومات الشخصية',

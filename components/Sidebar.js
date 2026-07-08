@@ -30,6 +30,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
       { href: '/admin/locations', icon: '📍', labelKey: 'sideLocations' },
       { href: '/admin/visits', icon: '👁', labelKey: 'sideVisits' },
       { href: '/admin/visits/student-data', icon: '🎓', labelKey: 'sideStudentData' },
+      { href: '/admin/visits/student-data/incomplete', icon: '⚠️', labelKey: 'sideIncompleteData', isChild: true },
       { href: '/admin/reports', icon: '📊', labelKey: 'sideReports' },
       { href: '/admin/profile', icon: '👤', labelKey: 'sideMyProfile' },
     ],
@@ -75,14 +76,20 @@ export default function Sidebar({ mobileOpen, onClose }) {
 
           {/* Nav */}
           <nav className={styles.nav}>
-            {items.map(({ href, icon, labelKey }) => (
+            {items.map(({ href, icon, labelKey, isChild }) => (
               <Link
                 key={href}
                 href={href}
                 className={`${styles.navItem} ${pathname === href ? styles.active : ''}`}
                 onClick={onClose}
+                style={isChild ? {
+                  paddingInlineStart: '2.4rem',
+                  fontSize: '0.82rem',
+                  opacity: pathname === href ? 1 : 0.78,
+                  marginTop: 1,
+                } : undefined}
               >
-                <span className={styles.navIcon}>{icon}</span>
+                <span className={styles.navIcon} style={isChild ? { fontSize: '0.9rem' } : undefined}>{icon}</span>
                 <span>{t(labelKey)}</span>
               </Link>
             ))}

@@ -1,39 +1,33 @@
 import Papa from 'papaparse';
 import { format } from 'date-fns';
-import { formatDateTime12h, formatTimeOnly12h } from './date';
+import { formatTimeOnly12h } from './date';
 
 export function exportReportsCSV(reports, filename = 'student_reports', locale = 'en') {
   const isAr = locale === 'ar';
   let csvContent = '';
 
   if (isAr) {
-    // Arabic Excel layout matching the screenshot
     csvContent += `"المرحلة الثالثة (الناجحين الى المرحلة الرابعة)"\n`;
     csvContent += `"ت","اسم الطالب","رقم هاتف الطالب","اسم الصيدلية","عنوان الصيدلية"\n`;
-
     reports.forEach((r, idx) => {
-      const name = r.student.name || '';
-      const phone = r.student.phone || '';
+      const name     = r.student.name || '';
+      const phone    = r.student.phone || '';
       const pharmacy = r.student.pharmacyName || '';
-      const address = r.student.city && r.student.location
+      const address  = r.student.city && r.student.location
         ? `${r.student.city} — ${r.student.location}`
         : r.student.city || r.student.location || '';
-
       csvContent += `"${idx + 1}","${name.replace(/"/g, '""')}","${phone.replace(/"/g, '""')}","${pharmacy.replace(/"/g, '""')}","${address.replace(/"/g, '""')}"\n`;
     });
   } else {
-    // English layout with equivalent columns
     csvContent += `"Third Stage (Rising to Fourth Stage)"\n`;
     csvContent += `"No.","Student Name","Student Phone","Pharmacy Name","Exact Address / Location"\n`;
-
     reports.forEach((r, idx) => {
-      const name = r.student.name || '';
-      const phone = r.student.phone || '';
+      const name     = r.student.name || '';
+      const phone    = r.student.phone || '';
       const pharmacy = r.student.pharmacyName || '';
-      const address = r.student.city && r.student.location
+      const address  = r.student.city && r.student.location
         ? `${r.student.city} — ${r.student.location}`
         : r.student.city || r.student.location || '';
-
       csvContent += `"${idx + 1}","${name.replace(/"/g, '""')}","${phone.replace(/"/g, '""')}","${pharmacy.replace(/"/g, '""')}","${address.replace(/"/g, '""')}"\n`;
     });
   }
@@ -41,15 +35,38 @@ export function exportReportsCSV(reports, filename = 'student_reports', locale =
   downloadCSV(csvContent, `${filename}_${format(new Date(), 'yyyyMMdd')}.csv`);
 }
 
-export async function exportReportsExcel(reports, filename = 'student_reports', locale = 'en', unregisteredList = null, teacherName = '') {
+/* ─────────────────────────────────────────────────────────
+   Styled Excel export matching the original HTML design:
+   - 18pt Arial font
+   - Blue header rows (#0B57D0) with white bold text
+   - All cells with thin black borders
+   - Column widths matching original (A narrow, B–E wide)
+   - Row heights: title 50pt, header 40pt, data 35pt
+   - RTL view for Arabic
+   - Sheet 1: registered students + optional teacher summary
+   - Sheet 2: unregistered students (if any)
+───────────────────────────────────────────────────────── */
+export async function exportReportsExcel(
+  reports,
+  filename = 'student_reports',
+  locale = 'en',
+  unregisteredList = null,
+  teacherName = ''
+) {
   const isAr = locale === 'ar';
+  const ExcelJS = (await import('exceljs')).default;
 
   let finalFilename = filename;
-  if (isAr && (filename === 'student_reports' || filename === 'تقرير_الترشيح_الكامل' || filename === 'تقرير_تدريب_الطلاب')) {
+  if (
+    isAr &&
+    (filename === 'student_reports' ||
+      filename === 'تقرير_الترشيح_الكامل' ||
+      filename === 'تقرير_تدريب_الطلاب')
+  ) {
     finalFilename = 'التدريب الصيفي كلية الصيدلة مرحلة رابعة';
   }
 
-  // Use provided list or fall back to fetching all unregistered (admin path)
+  // ── Fetch unregistered list ───────────────────────────
   let unregisteredStudents = [];
   if (unregisteredList !== null) {
     unregisteredStudents = unregisteredList;
@@ -58,13 +75,83 @@ export async function exportReportsExcel(reports, filename = 'student_reports', 
       const res = await fetch('/api/official-students');
       if (res.ok) {
         const data = await res.json();
-        const allOfficial = data.students || [];
-        unregisteredStudents = allOfficial.filter(s => !s.is_registered);
+        const all  = data.students || [];
+        unregisteredStudents = all.filter(s => !s.is_registered);
       }
     } catch (err) {
       console.error('Error fetching unregistered students:', err);
     }
   }
+
+  // ── Sort ──────────────────────────────────────────────
+  const sortedReports = [...reports].sort((a, b) =>
+    (a.student?.name || '').localeCompare(
+      b.student?.name || '',
+      isAr ? 'ar' : 'en',
+      { sensitivity: 'accent' }
+    )
+  );
+
+  // ── Style helpers ─────────────────────────────────────
+  const BLUE       = { argb: 'FF0B57D0' };
+  const WHITE      = { argb: 'FFFFFFFF' };
+  const BLACK      = { argb: 'FF000000' };
+  const FONT_SIZE  = 18;
+  const FONT_NAME  = 'Arial';
+
+  const thinBorder = {
+    top:    { style: 'thin', color: BLACK },
+    left:   { style: 'thin', color: BLACK },
+    bottom: { style: 'thin', color: BLACK },
+    right:  { style: 'thin', color: BLACK },
+  };
+
+  const headerFill  = { type: 'pattern', pattern: 'solid', fgColor: BLUE };
+  const headerFont  = { name: FONT_NAME, size: FONT_SIZE, bold: true, color: WHITE };
+  const dataFont    = { name: FONT_NAME, size: FONT_SIZE, bold: false, color: BLACK };
+  const centerAlign = { horizontal: 'center', vertical: 'middle' };
+
+  function applyHeaderStyle(cell, isWrap = false) {
+    cell.fill      = headerFill;
+    cell.font      = headerFont;
+    cell.border    = thinBorder;
+    cell.alignment = isWrap
+      ? { horizontal: 'center', vertical: 'middle', wrapText: true }
+      : centerAlign;
+  }
+
+  function applyDataStyle(cell, isPhone = false, isWrap = false) {
+    cell.font      = dataFont;
+    cell.border    = thinBorder;
+    cell.alignment = isWrap
+      ? { horizontal: 'center', vertical: 'middle', wrapText: true }
+      : centerAlign;
+    if (isPhone) cell.numFmt = '@'; // keep phone as text
+  }
+
+  // ── Column definitions ────────────────────────────────
+  const colWidths = [
+    { width: 6.43 },
+    { width: 49 },
+    { width: 25.86 },
+    { width: 45 },
+    { width: 64 },
+  ];
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator  = 'PTMS';
+  wb.modified = new Date();
+
+  // ══════════════════════════════════════════════════════
+  // SHEET 1 — Student Data
+  // ══════════════════════════════════════════════════════
+  const ws1 = wb.addWorksheet(isAr ? 'الطلبة المسجلون' : 'Registered', {
+    views: [{ rightToLeft: isAr }],
+    pageSetup: { paperSize: 9, orientation: 'landscape', scale: 70 } // paperSize 9 = A4, landscape, 70% scale
+  });
+
+  // Column widths
+  ws1.columns = colWidths;
 
   const title = isAr
     ? 'المرحلة الثالثة (الناجحين الى المرحلة الرابعة)'
@@ -74,188 +161,119 @@ export async function exportReportsExcel(reports, filename = 'student_reports', 
     ? ['ت', 'اسم الطالب', 'رقم هاتف الطالب', 'اسم الصيدلية', 'عنوان الصيدلية']
     : ['No.', 'Student Name', 'Student Phone', 'Pharmacy Name', 'Exact Address / Location'];
 
-  // Sort registered students list by name (locale-aware)
-  const sortedReports = [...reports].sort((a, b) => {
-    const nameA = a.student?.name || '';
-    const nameB = b.student?.name || '';
-    return nameA.localeCompare(nameB, locale === 'ar' ? 'ar' : 'en', { sensitivity: 'accent' });
-  });
+  // ── Title banner row (merged A1:E1) ────────────────────
+  const titleRow = ws1.addRow([title, '', '', '', '']);
+  titleRow.height = 50;
+  ws1.mergeCells(`A1:E1`);
+  for (let c = 1; c <= 5; c++) {
+    const cell = titleRow.getCell(c);
+    applyHeaderStyle(cell);
+    cell.alignment = { ...centerAlign, wrapText: true };
+  }
 
-  const rowsHtml = sortedReports.map((r, idx) => {
-    const name = r.student.name || '&nbsp;';
-    const phone = r.student.phone || '&nbsp;';
-    const pharmacy = r.student.pharmacyName || '&nbsp;';
+  // ── Header row ─────────────────────────────────────────
+  const headerRow = ws1.addRow(headers);
+  headerRow.height = 40;
+  for (let c = 1; c <= 5; c++) {
+    applyHeaderStyle(headerRow.getCell(c), c === 4 || c === 5);
+  }
+
+  // ── Data rows ──────────────────────────────────────────
+  sortedReports.forEach((r, idx) => {
     const address = r.student.city && r.student.location
       ? `${r.student.city} — ${r.student.location}`
-      : r.student.city || r.student.location || '&nbsp;';
+      : r.student.city || r.student.location || '';
 
-    return `
-      <tr style="height: 35px;">
-        <td style="border: 1px solid #000000; text-align: center; font-family: Arial, sans-serif; font-size: 18pt; padding: 4px; vertical-align: middle;">${idx + 1}</td>
-        <td style="border: 1px solid #000000; text-align: center; font-family: Arial, sans-serif; font-size: 18pt; padding: 4px; vertical-align: middle;">${name}</td>
-        <td style="border: 1px solid #000000; text-align: center; font-family: Arial, sans-serif; font-size: 18pt; padding: 4px; vertical-align: middle; mso-number-format:'\\@';">${phone}</td>
-        <td style="border: 1px solid #000000; text-align: center; font-family: Arial, sans-serif; font-size: 18pt; padding: 4px; vertical-align: middle;">${pharmacy}</td>
-        <td style="border: 1px solid #000000; text-align: center; font-family: Arial, sans-serif; font-size: 18pt; padding: 4px; vertical-align: middle;">${address}</td>
-      </tr>
-    `;
-  }).join('');
+    const row = ws1.addRow([
+      String(idx + 1),
+      r.student.name        || '',
+      r.student.phone       || '',
+      r.student.pharmacyName || '',
+      address,
+    ]);
+    row.eachCell((cell, colNum) => {
+      const isWrap = colNum === 4 || colNum === 5;
+      const isTextFormat = colNum === 1 || colNum === 3;
+      applyDataStyle(cell, isTextFormat, isWrap);
+    });
+  });
 
-  // ── 2 summary rows below the data table (only for teachers) ───────────────
-  let summaryRowsHtml = '';
+  // ── Teacher summary (optional) ─────────────────────────
   if (teacherName) {
-    const cellStyle = 'border: 1px solid #000000; text-align: center; font-family: Arial, sans-serif; font-size: 18pt; padding: 6px; vertical-align: middle;';
-    const labelCellStyle = `${cellStyle} background-color: #0B57D0; color: #ffffff; font-weight: bold;`;
-    const supervisorLabel = isAr ? 'الدكتور المشرف' : 'Supervisor';
-    const countLabel      = isAr ? 'عدد الطلاب' : 'No. of Students';
-    const studentCount    = reports.length;
-    const empty           = '<td style="border: none;"></td>';
+    ws1.addRow([]); // spacer
+    const labelRow = ws1.addRow(
+      isAr
+        ? ['', 'الدكتور المشرف', 'عدد الطلاب', '', '']
+        : ['', 'Supervisor', 'No. of Students', '', '']
+    );
+    labelRow.height = 40;
+    [2, 3].forEach(c => applyHeaderStyle(labelRow.getCell(c)));
 
-    // Columns order in the HTML is: A(ت), B(اسم الطالب), C(هاتف), D(صيدلية), E(عنوان)
-    // Summary should appear only in cols B and C (index 1 and 2), others empty
-    summaryRowsHtml = `
-      <tr style="height: 18px;"><td colspan="5" style="border: none;">&nbsp;</td></tr>
-      <tr style="height: 40px;">
-        ${empty}
-        <td style="${labelCellStyle}">${supervisorLabel}</td>
-        <td style="${labelCellStyle}">${countLabel}</td>
-        ${empty}
-        ${empty}
-      </tr>
-      <tr style="height: 40px;">
-        ${empty}
-        <td style="${cellStyle}">${teacherName}</td>
-        <td style="${cellStyle}">${studentCount}</td>
-        ${empty}
-        ${empty}
-      </tr>
-    `;
+    const valRow = ws1.addRow(['', teacherName, reports.length, '', '']);
+    valRow.height = 40;
+    [2, 3].forEach(c => applyDataStyle(valRow.getCell(c)));
   }
 
-  // Generate rows for unregistered students table
-  let unregisteredRowsHtml = '';
+  // ── Unregistered Students (under the main table on same sheet) ──
   if (unregisteredStudents.length > 0) {
-    unregisteredRowsHtml += `
-      <tr style="height: 25px;"><td colspan="5" style="border: none;">&nbsp;</td></tr>
-      <tr style="height: 25px;"><td colspan="5" style="border: none;">&nbsp;</td></tr>
-      <tr style="height: 25px;"><td colspan="5" style="border: none;">&nbsp;</td></tr>
-      <tr style="height: 25px;"><td colspan="5" style="border: none;">&nbsp;</td></tr>
-    `;
+    const RED = { argb: 'FF9E0B0B' };
 
-    const secondTableTitle = isAr ? 'الطلبة الغير متدربين' : 'Unregistered Students';
-    unregisteredRowsHtml += `
-      <tr style="height: 50px;">
-        <th colspan="2" style="border: 1px solid #000000; background-color: #9E0B0B; color: #ffffff; text-align: center; font-size: 18pt; font-family: Arial, sans-serif; font-weight: bold; vertical-align: middle;">
-          ${secondTableTitle}
-        </th>
-        <td colspan="3" style="border: none;"></td>
-      </tr>
-    `;
+    // Add 4 empty spacer rows
+    for (let k = 0; k < 4; k++) {
+      const spacerRow = ws1.addRow([]);
+      spacerRow.height = 25;
+    }
 
-    const secondHeaders = isAr ? ['ت', 'اسم الطالب'] : ['No.', 'Student Name'];
-    unregisteredRowsHtml += `
-      <tr style="height: 40px;">
-        <th style="border: 1px solid #000000; background-color: #9E0B0B; text-align: center; font-family: Arial, sans-serif; font-size: 18pt; font-weight: bold; color: #ffffff; padding: 6px; vertical-align: middle;">${secondHeaders[0]}</th>
-        <th style="border: 1px solid #000000; background-color: #9E0B0B; text-align: center; font-family: Arial, sans-serif; font-size: 18pt; font-weight: bold; color: #ffffff; padding: 6px; vertical-align: middle;">${secondHeaders[1]}</th>
-        <td colspan="3" style="border: none;"></td>
-      </tr>
-    `;
+    const secondTitle = isAr ? 'الطلبة الغير متدربين' : 'Unregistered Students';
+    const startRowIndex = ws1.lastRow.number + 1;
 
-    // Sort unregistered students list by name (locale-aware)
-    const sortedUnregistered = [...unregisteredStudents].sort((a, b) => {
-      const nameA = a.name || '';
-      const nameB = b.name || '';
-      return nameA.localeCompare(nameB, locale === 'ar' ? 'ar' : 'en', { sensitivity: 'accent' });
+    // Add title row for unregistered table (A & B merged)
+    const titleRow2 = ws1.addRow([secondTitle, '', '', '', '']);
+    titleRow2.height = 50;
+    ws1.mergeCells(`A${startRowIndex}:B${startRowIndex}`);
+
+    for (let c = 1; c <= 2; c++) {
+      const cell = titleRow2.getCell(c);
+      cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: RED };
+      cell.font      = { name: FONT_NAME, size: FONT_SIZE, bold: true, color: WHITE };
+      cell.border    = thinBorder;
+      cell.alignment = centerAlign;
+    }
+
+    // Headers row: ت and اسم الطالب
+    const nextRowIndex = ws1.lastRow.number + 1;
+    const hRow2 = ws1.addRow(isAr ? ['ت', 'اسم الطالب', '', '', ''] : ['No.', 'Student Name', '', '', '']);
+    hRow2.height = 40;
+
+    [1, 2].forEach(colIndex => {
+      const cell = hRow2.getCell(colIndex);
+      cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: RED };
+      cell.font      = { name: FONT_NAME, size: FONT_SIZE, bold: true, color: WHITE };
+      cell.border    = thinBorder;
+      cell.alignment = centerAlign;
     });
 
-    sortedUnregistered.forEach((student, idx) => {
-      unregisteredRowsHtml += `
-        <tr style="height: 35px;">
-          <td style="border: 1px solid #000000; text-align: center; font-family: Arial, sans-serif; font-size: 18pt; padding: 4px; vertical-align: middle;">${idx + 1}</td>
-          <td style="border: 1px solid #000000; text-align: center; font-family: Arial, sans-serif; font-size: 18pt; padding: 4px; vertical-align: middle;">${student.name}</td>
-          <td colspan="3" style="border: none;"></td>
-        </tr>
-      `;
+    // Unregistered data rows
+    const sortedUnreg = [...unregisteredStudents].sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '', isAr ? 'ar' : 'en', { sensitivity: 'accent' })
+    );
+
+    sortedUnreg.forEach((s, idx) => {
+      const row = ws1.addRow([String(idx + 1), s.name || '', '', '', '']);
+      applyDataStyle(row.getCell(1), true); // col A formatted as Text
+      applyDataStyle(row.getCell(2), false);
     });
   }
 
-  const html = `
-    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-    <head>
-      <meta charset="utf-8">
-      <style>
-        @page {
-          mso-page-orientation: landscape;
-        }
-        table {
-          font-family: Arial, sans-serif;
-          font-size: 18pt;
-          border-collapse: collapse;
-        }
-        td, th {
-          font-family: Arial, sans-serif;
-          font-size: 18pt;
-          white-space: nowrap;
-        }
-      </style>
-      <!--[if gte mso 9]>
-      <xml>
-        <x:ExcelWorkbook>
-          <x:ExcelWorksheets>
-            <x:ExcelWorksheet>
-              <x:Name>Sheet1</x:Name>
-              <x:WorksheetOptions>
-                <x:DisplayGridlines/>
-                ${isAr ? '<x:DisplayRightToLeft/>' : ''}
-                <x:PageSetup>
-                  <x:Layout x:Orientation="Landscape"/>
-                </x:PageSetup>
-                <x:Print>
-                  <x:ValidPrinterInfo/>
-                  <x:Scale>74</x:Scale>
-                  <x:PaperSizeIndex>9</x:PaperSizeIndex>
-                </x:Print>
-              </x:WorksheetOptions>
-            </x:ExcelWorksheet>
-          </x:ExcelWorksheets>
-        </x:ExcelWorkbook>
-      </xml>
-      <![endif]-->
-    </head>
-    <body style="direction: ${isAr ? 'rtl' : 'ltr'}; font-family: Arial, sans-serif;">
-      <table style="table-layout: fixed; border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 18pt;">
-        <colgroup>
-          <col style="mso-width-source:userset; mso-width-alt:1866; width:47pt" width="63">
-          <col style="mso-width-source:userset; mso-width-alt:12726; width:302pt" width="403">
-          <col style="mso-width-source:userset; mso-width-alt:6802; width:163pt" width="218">
-          <col style="mso-width-source:userset; mso-width-alt:11702; width:278pt" width="371">
-          <col style="mso-width-source:userset; mso-width-alt:11702; width:278pt" width="371">
-        </colgroup>
-        <!-- Title Banner -->
-        <tr style="height: 50px;">
-          <th colspan="5" style="border: 1px solid #000000; background-color: #0B57D0; color: #ffffff; text-align: center; font-size: 18pt; font-family: Arial, sans-serif; font-weight: bold; vertical-align: middle;">
-            ${title}
-          </th>
-        </tr>
-        <!-- Headers -->
-        <tr style="height: 40px;">
-          ${headers.map(h => `<th style="border: 1px solid #000000; background-color: #0B57D0; text-align: center; font-family: Arial, sans-serif; font-size: 18pt; font-weight: bold; color: #ffffff; padding: 6px; vertical-align: middle;">${h}</th>`).join('')}
-        </tr>
-        <!-- Data Rows -->
-        ${rowsHtml}
-        <!-- Summary: teacher name + count -->
-        ${summaryRowsHtml}
-        <!-- Unregistered Rows -->
-        ${unregisteredRowsHtml}
-      </table>
-    </body>
-    </html>
-  `;
-
-  const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+  // ── Write file ────────────────────────────────────────
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob   = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${finalFilename}_${format(new Date(), 'yyyyMMdd')}.xls`;
+  const a   = document.createElement('a');
+  a.href    = url;
+  a.download = `${finalFilename}_${format(new Date(), 'yyyyMMdd')}.xlsx`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -266,21 +284,21 @@ export function exportVisitsCSV(visits, studentName, locale = 'en') {
   const rows = visits.map((v) => {
     if (isAr) {
       return {
-        'اسم المشرف': v.teacherName || '',
-        'اسم الطالب': v.studentName || studentName || '',
-        'التاريخ': format(new Date(v.visitedAt), 'dd/MM/yyyy'),
-        'الوقت': formatTimeOnly12h(v.visitedAt, 'ar'),
-        'ملاحظات': v.notes || '',
-        'الحالة': 'تمت الزيارة',
+        'اسم المشرف':  v.teacherName || '',
+        'اسم الطالب':  v.studentName || studentName || '',
+        'التاريخ':     format(new Date(v.visitedAt), 'dd/MM/yyyy'),
+        'الوقت':       formatTimeOnly12h(v.visitedAt, 'ar'),
+        'ملاحظات':     v.notes || '',
+        'الحالة':      'تمت الزيارة',
       };
     } else {
       return {
         'Teacher Name': v.teacherName || '',
         'Student Name': v.studentName || studentName || '',
-        'Date': format(new Date(v.visitedAt), 'dd/MM/yyyy'),
-        'Time': formatTimeOnly12h(v.visitedAt, 'en'),
-        'Notes': v.notes || '',
-        'Status': v.status || 'visited',
+        'Date':         format(new Date(v.visitedAt), 'dd/MM/yyyy'),
+        'Time':         formatTimeOnly12h(v.visitedAt, 'en'),
+        'Notes':        v.notes || '',
+        'Status':       v.status || 'visited',
       };
     }
   });
@@ -291,9 +309,9 @@ export function exportVisitsCSV(visits, studentName, locale = 'en') {
 
 function downloadCSV(csvContent, filename) {
   const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);

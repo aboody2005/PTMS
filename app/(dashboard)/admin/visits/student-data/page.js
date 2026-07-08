@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from '@/context/LanguageContext';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
+import * as XLSX from 'xlsx';
 
 /* ─────────────────────────────────────────────
    CSV / Excel simple parser (client-side)
@@ -347,24 +348,32 @@ export default function StudentDataPage() {
     }
   };
 
-  /* Export CSV */
+  /* Export Excel */
   const handleExport = () => {
-    const rows = [
-      ar ? ['الاسم', 'الحالة', 'تاريخ التسجيل'] : ['Name', 'Status', 'Registered At'],
-      ...students.map((s) => [
+    try {
+      const headers = ar
+        ? ['الاسم', 'الحالة', 'تاريخ التسجيل']
+        : ['Name', 'Status', 'Registered At'];
+
+      const rows = students.map((s) => [
         s.name,
-        s.is_registered ? (ar ? 'مسجّل' : 'Registered') : (ar ? 'غير مسجّل' : 'Not Registered'),
+        s.is_registered
+          ? (ar ? 'مسجّل' : 'Registered')
+          : (ar ? 'غير مسجّل' : 'Not Registered'),
         s.registered_at ? format(new Date(s.registered_at), 'dd/MM/yyyy HH:mm') : '',
-      ]),
-    ];
-    const csv = rows.map((r) => r.map((c) => `"${c}"`).join(',')).join('\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'official_students.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+      ]);
+
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      ws['!cols'] = [{ wch: 36 }, { wch: 18 }, { wch: 22 }];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, ar ? 'بيانات الطلبة' : 'Student Data');
+      XLSX.writeFile(wb, `official_students_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      toast.success(ar ? 'تم التصدير بنجاح ✓' : 'Exported successfully ✓');
+    } catch (err) {
+      console.error('Excel export error:', err);
+      toast.error(ar ? 'فشل التصدير' : 'Export failed');
+    }
   };
 
   /* File picker for import */
@@ -599,8 +608,10 @@ export default function StudentDataPage() {
           >
             {syncing ? '⏳' : '🔄'} {ar ? 'مزامنة الكل' : 'Sync All'}
           </button>
-          <button className="btn btn-secondary btn-sm" onClick={handleExport}>
-            ⬇ {ar ? 'تصدير CSV' : 'Export CSV'}
+          <button className="btn btn-secondary btn-sm" onClick={handleExport}
+            style={{ background: 'linear-gradient(135deg,#22863a,#2ea043)', borderColor: '#22863a', color: '#fff' }}
+          >
+            📥 {ar ? 'تصدير Excel' : 'Export Excel'}
           </button>
           <button className="btn btn-secondary btn-sm" onClick={() => { setImportModal(true); setImportPreview([]); setImportFile(null); }}>
             ⬆ {ar ? 'استيراد' : 'Import'}
