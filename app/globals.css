@@ -1,7 +1,7 @@
 /* ============================================================
    PTMS Global Design System (Redesigned)
    ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cairo:wght@300;400;500;600;700;800&display=swap');
+
 
 /* ── CSS Variables ─────────────────────────────────────────── */
 :root {
@@ -82,7 +82,7 @@ html, body {
   position: relative;
 }
 body {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-plus-jakarta), -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.6;
@@ -493,7 +493,7 @@ html[dir="rtl"] .search-bar .search-icon { left: auto; right: 14px; }
 /* ── RTL Style Overrides ────────────────────────────────────── */
 html[dir="rtl"] body {
   text-align: right;
-  font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-cairo), var(--font-tajawal), system-ui, -apple-system, sans-serif;
 }
 html[dir="rtl"] .dashboard-main {
   margin-left: 0;

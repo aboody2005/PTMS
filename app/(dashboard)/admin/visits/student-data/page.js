@@ -3,7 +3,6 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from '@/context/LanguageContext';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
-import * as XLSX from 'xlsx';
 
 /* ─────────────────────────────────────────────
    CSV / Excel simple parser (client-side)
@@ -349,7 +348,7 @@ export default function StudentDataPage() {
   };
 
   /* Export Excel */
-  const handleExport = () => {
+  const handleExport = async () => {
     try {
       const headers = ar
         ? ['الاسم', 'الحالة', 'تاريخ التسجيل']
@@ -363,6 +362,7 @@ export default function StudentDataPage() {
         s.registered_at ? format(new Date(s.registered_at), 'dd/MM/yyyy HH:mm') : '',
       ]);
 
+      const XLSX = await import('xlsx');
       const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
       ws['!cols'] = [{ wch: 36 }, { wch: 18 }, { wch: 22 }];
 

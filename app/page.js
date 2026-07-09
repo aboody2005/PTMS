@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useTranslation } from '@/context/LanguageContext';
@@ -8,6 +9,7 @@ import styles from './home.module.css';
 
 export default function HomePage() {
   const { user, loading } = useAuth();
+  const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const { locale, toggleLanguage, t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -43,9 +45,9 @@ export default function HomePage() {
   // Redirect logged-in users to their dashboard
   useEffect(() => {
     if (!loading && user) {
-      window.location.href = `/${user.role}/dashboard`;
+      router.replace(`/${user.role}/dashboard`);
     }
-  }, [user, loading]);
+  }, [user, loading, router]);
 
   if (loading) {
     return (

@@ -38,11 +38,16 @@ export default function AdminAssignments() {
         const [sRes, tRes, lRes] = await Promise.all([
           api.students.list({ limit: 10000 }),
           api.teachers.list(),
-          api.locations.list(),
+          api.locations.list({ all: true }),
         ]);
         setStudents(sRes.students || []);
         setTeachers(tRes.teachers || []);
-        setLocations(lRes.locations || []);
+        
+        // Sort locations alphabetically by name to match the locations page
+        const sortedLocs = (lRes.locations || []).sort((a, b) =>
+          (a.name || '').localeCompare(b.name || '', locale === 'ar' ? 'ar' : 'en', { sensitivity: 'accent' })
+        );
+        setLocations(sortedLocs);
       } catch {}
       finally { setLoading(false); }
 
@@ -430,7 +435,9 @@ export default function AdminAssignments() {
         <select className="form-control" style={{ width: 180 }} value={locationFilter} onChange={e => setLocationFilter(e.target.value)}>
           <option value="">{t('allLocations')}</option>
           {locations.map(l => (
-            <option key={l._id} value={l._id}>{l.city} — {l.region || l.name}</option>
+            <option key={l._id} value={l._id}>
+              {l.city} — {l.name} {l.region ? `(${l.region})` : ''} {!l.isActive && (locale === 'ar' ? ' (غير نشط)' : ' (Inactive)')}
+            </option>
           ))}
         </select>
         <select className="form-control" style={{ width: 180 }} value={monthFilter} onChange={e => setMonthFilter(e.target.value)}>
@@ -922,7 +929,9 @@ export default function AdminAssignments() {
                   <select className="form-control" value={editForm.locationId} onChange={e => setEditForm(p => ({ ...p, locationId: e.target.value }))}>
                     <option value="">{locale === 'ar' ? '— غير محدد —' : '— Select Location —'}</option>
                     {locations.map(l => (
-                      <option key={l._id} value={l._id}>{l.city} — {l.region || l.name}</option>
+                      <option key={l._id} value={l._id}>
+                        {l.city} — {l.name} {l.region ? `(${l.region})` : ''} {!l.isActive && (locale === 'ar' ? ' (غير نشط)' : ' (Inactive)')}
+                      </option>
                     ))}
                   </select>
                 </div>

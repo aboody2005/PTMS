@@ -580,12 +580,13 @@ export const api = {
   // ── Locations ─────────────────────────────────────────────
 
   locations: {
-    /** List all active locations */
-    list: async () => {
-      const { data: rawLocations, error } = await supabase
-        .from('locations')
-        .select('*')
-        .eq('is_active', true)
+    /** List locations, optionally including inactive ones */
+    list: async (params = {}) => {
+      let query = supabase.from('locations').select('*');
+      if (!params.all) {
+        query = query.eq('is_active', true);
+      }
+      const { data: rawLocations, error } = await query
         .order('city', { ascending: true })
         .order('name', { ascending: true });
 
@@ -628,7 +629,7 @@ export const api = {
       return { message: 'Location updated', location: serializeLocation(location) };
     },
 
-    /** Soft-delete a location (admin only) */
+    /** Delete a location permanently (admin only) */
     delete: async (id) => {
       // Unassign this location from all students first
       await supabase
@@ -638,7 +639,7 @@ export const api = {
 
       const { error } = await supabase
         .from('locations')
-        .update({ is_active: false })
+        .delete()
         .eq('id', id);
 
       if (error) throwError(error, 'Delete failed');

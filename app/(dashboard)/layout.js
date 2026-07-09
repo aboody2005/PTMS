@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/context/LanguageContext';
 import Sidebar from '@/components/Sidebar';
@@ -25,19 +26,14 @@ export default function DashboardLayout({ children }) {
   const { user, loading } = useAuth();
   const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [pathname, setPathname] = useState('');
-
-  useEffect(() => {
-    Promise.resolve().then(() => {
-      setPathname(window.location.pathname);
-    });
-  }, []);
+  const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     if (!loading && !user) {
-      window.location.href = '/login';
+      router.replace('/login');
     }
-  }, [loading, user]);
+  }, [loading, user, router]);
 
   if (loading || !user) {
     return (

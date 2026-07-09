@@ -3,7 +3,6 @@ import { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from '@/context/LanguageContext';
 import toast from 'react-hot-toast';
 import { supabase } from '@/lib/supabaseClient';
-import * as XLSX from 'xlsx';
 
 /* ─────────────────────────────────────────
    Format date safely
@@ -256,6 +255,7 @@ export default function IncompleteDataPage() {
         ];
       });
 
+      const XLSX = await import('xlsx');
       const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
       ws['!cols'] = [4, 26, 28, 14, 24, 16, 16, 30, 12, 12, 14, 14, 40].map(w => ({ wch: w }));
 

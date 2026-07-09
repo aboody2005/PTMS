@@ -37,7 +37,12 @@ export default function StudentProfile() {
         ]);
         const s = sRes.student;
         setStudent(s);
-        setLocations(lRes.locations || []);
+        
+        // Sort locations alphabetically by name to match the locations page
+        const sorted = (lRes.locations || []).sort((a, b) =>
+          (a.name || '').localeCompare(b.name || '', locale === 'ar' ? 'ar' : 'en', { sensitivity: 'accent' })
+        );
+        setLocations(sorted);
         setIsLocked(lockRes?.lockStudentEdits || false);
         setUserForm({
           name: user?.name || '',
@@ -459,7 +464,9 @@ export default function StudentProfile() {
                 onChange={e => setStudentForm(p => ({ ...p, locationId: e.target.value }))} disabled={isLocked}>
                 <option value="">{locale === 'ar' ? 'اختر الموقع...' : 'Select location...'}</option>
                 {locations.map(l => (
-                  <option key={l.id || l._id} value={l.id || l._id}>{l.city} — {l.region || l.name}</option>
+                  <option key={l.id || l._id} value={l.id || l._id}>
+                    {l.city} — {l.name} {l.region ? `(${l.region})` : ''}
+                  </option>
                 ))}
               </select>
               {!isLocked && (

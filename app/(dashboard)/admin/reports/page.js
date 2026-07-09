@@ -25,7 +25,12 @@ export default function AdminReports() {
         ]);
         setReports(rData.reports || []);
         setStats(rData.stats || {});
-        setLocations(lData.locations || []);
+        
+        // Sort locations alphabetically by name to match the locations page
+        const sortedLocs = (lData.locations || []).sort((a, b) =>
+          (a.name || '').localeCompare(b.name || '', locale === 'ar' ? 'ar' : 'en', { sensitivity: 'accent' })
+        );
+        setLocations(sortedLocs);
       } catch {}
       finally { setLoading(false); }
     }
@@ -123,7 +128,9 @@ export default function AdminReports() {
           onChange={e => setLocationFilter(e.target.value)}>
           <option value="">{t('allLocations')}</option>
           {locations.map(l => (
-            <option key={l._id} value={l._id}>{l.city} — {l.region || l.name}</option>
+            <option key={l._id} value={l._id}>
+              {l.city} — {l.name} {l.region ? `(${l.region})` : ''}
+            </option>
           ))}
         </select>
       </div>

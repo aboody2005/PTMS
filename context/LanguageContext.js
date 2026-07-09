@@ -103,6 +103,7 @@ const translations = {
     sideVisits: 'Show Visits',
     sideStudentData: 'Student Data',
     sideIncompleteData: 'Incomplete Data',
+    sideGpsAudit: 'GPS Location Audit',
 
     // Profile Page
     personalInfo: 'Personal Information',
@@ -276,6 +277,7 @@ const translations = {
     sideVisits: 'عرض الزيارات',
     sideStudentData: 'بيانات الطلبة',
     sideIncompleteData: 'البيانات الغير مكتملة',
+    sideGpsAudit: 'تدقيق المواقع',
 
     // Profile Page
     personalInfo: 'المعلومات الشخصية',
@@ -371,7 +373,7 @@ export function LanguageProvider({ children }) {
     
     // Set custom font for Arabic
     if (locale === 'ar') {
-      document.body.style.fontFamily = "'Cairo', 'Tajawal', system-ui, -apple-system, sans-serif";
+      document.body.style.fontFamily = "var(--font-cairo), var(--font-tajawal), system-ui, -apple-system, sans-serif";
     } else {
       document.body.style.fontFamily = '';
     }

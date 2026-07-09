@@ -60,7 +60,10 @@ export default function RegisterPage() {
         const res = await fetch('/api/locations');
         if (!res.ok) throw new Error('Failed to load locations');
         const data = await res.json();
-        setLocations(data.locations || []);
+        const sorted = (data.locations || []).sort((a, b) =>
+          (a.name || '').localeCompare(b.name || '', locale === 'ar' ? 'ar' : 'en', { sensitivity: 'accent' })
+        );
+        setLocations(sorted);
       } catch (err) {
         console.error('Failed to fetch locations', err);
         toast.error(locale === 'ar' ? 'فشل تحميل المواقع' : 'Failed to load pharmacy locations');
@@ -638,7 +641,7 @@ export default function RegisterPage() {
                   </option>
                   {locations.map((l) => (
                     <option key={l.id || l._id} value={l.id || l._id}>
-                      {l.city} — {l.region || l.name}
+                      {l.city} — {l.name} {l.region ? `(${l.region})` : ''}
                     </option>
                   ))}
                 </select>
