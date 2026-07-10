@@ -839,6 +839,9 @@ export const api = {
             teacher: (student.teacher && student.teacher.is_active !== false)
               ? student.teacher.name
               : null,
+            trainingDays: student.training_days || [],
+            attendanceStart: student.attendance_start || '',
+            attendanceEnd: student.attendance_end || '',
           },
           visits: serializedVisits,
           visitCount: serializedVisits.length,

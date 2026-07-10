@@ -98,12 +98,23 @@ const translations = {
     sideMyStudents: 'My Students',
     sideReports: 'Reports',
     sideUsers: 'User Management',
+    sideDistribution: 'Student Distribution',
     sideAssignments: 'Assignments',
     sideLocations: 'Locations',
     sideVisits: 'Show Visits',
     sideStudentData: 'Student Data',
     sideIncompleteData: 'Incomplete Data',
     sideGpsAudit: 'GPS Location Audit',
+
+    // Student Distribution Page
+    distribTeacher: 'Select Supervisor Teacher',
+    distribLocations: 'Select Locations & Pharmacies',
+    distribAllPharmacies: 'All Pharmacies in this City',
+    distribSaveBtn: 'Apply Student Distribution',
+    distribSelectTeacherPrompt: 'Please select a supervisor teacher to manage locations.',
+    distribNoStudents: 'No students registered at these pharmacies.',
+    distribAffectedStudents: 'Students to be assigned/updated',
+    distribConfirmMsg: 'Are you sure you want to assign these students to this supervisor?',
 
     // Profile Page
     personalInfo: 'Personal Information',
@@ -272,12 +283,24 @@ const translations = {
     sideMyStudents: 'طلابي',
     sideReports: 'التقارير',
     sideUsers: 'إدارة المستخدمين',
+    sideDistribution: 'توزيع الطلبة',
     sideAssignments: 'التعيينات والربط',
     sideLocations: 'مواقع الصيدليات',
     sideVisits: 'عرض الزيارات',
     sideStudentData: 'بيانات الطلبة',
     sideIncompleteData: 'البيانات الغير مكتملة',
     sideGpsAudit: 'تدقيق المواقع',
+
+    // Student Distribution Page
+    distribTeacher: 'اختر المشرف الأكاديمي',
+    distribLocations: 'اختر المناطق والصيدليات',
+    distribAllPharmacies: 'اختر الصيدليات والمواقع',
+    distribAllPharmaciesLabel: 'جميع الصيدليات في هذه المدينة',
+    distribSaveBtn: 'تطبيق توزيع الطلبة',
+    distribSelectTeacherPrompt: 'الرجاء اختيار مشرف أكاديمي لإدارة المواقع والربط.',
+    distribNoStudents: 'لا يوجد طلاب مسجلين في هذه الصيدليات.',
+    distribAffectedStudents: 'الطلاب الذين سيتم ربطهم بالمشرف',
+    distribConfirmMsg: 'هل أنت متأكد من تعيين هؤلاء الطلاب للمشرف المختار؟',
 
     // Profile Page
     personalInfo: 'المعلومات الشخصية',

@@ -26,6 +26,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
     admin: [
       { href: '/admin/dashboard', icon: '🏠', labelKey: 'sideDashboard' },
       { href: '/admin/users', icon: '👥', labelKey: 'sideUsers' },
+      { href: '/admin/distribution', icon: '🔄', labelKey: 'sideDistribution' },
       { href: '/admin/assignments', icon: '🔗', labelKey: 'sideAssignments' },
       { href: '/admin/locations', icon: '📍', labelKey: 'sideLocations' },
       { href: '/admin/visits', icon: '👁', labelKey: 'sideVisits' },

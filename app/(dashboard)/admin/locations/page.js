@@ -59,9 +59,11 @@ export default function AdminLocations() {
     } else if (filterType === 'unselected') {
       filtered = filtered.filter(l => l.studentCount === 0);
     }
-    return filtered.sort((a, b) =>
-      (a.name || '').localeCompare(b.name || '', locale === 'ar' ? 'ar' : 'en', { sensitivity: 'accent' })
-    );
+    return filtered.sort((a, b) => {
+      const cityCompare = (a.city || '').localeCompare(b.city || '', locale === 'ar' ? 'ar' : 'en', { sensitivity: 'accent' });
+      if (cityCompare !== 0) return cityCompare;
+      return (a.name || '').localeCompare(b.name || '', locale === 'ar' ? 'ar' : 'en', { sensitivity: 'accent' });
+    });
   }, [locations, locale, filterType]);
 
   useEffect(() => {
@@ -201,7 +203,7 @@ export default function AdminLocations() {
               <tr>
                 <th style={{ width: '80px', textAlign: 'center' }}>#</th>
                 <th style={{ width: '180px', textAlign: 'center' }}>{t('cityLabel')}</th>
-                <th style={{ textAlign: 'center' }}>{locale === 'ar' ? 'اسم الصيدلية' : 'Pharmacy Name'}</th>
+                <th style={{ textAlign: 'center' }}>{locale === 'ar' ? 'موقع الصيدلية' : 'Pharmacy Location'}</th>
                 <th style={{ width: '150px', textAlign: 'center' }}>{locale === 'ar' ? 'عدد الطلبة' : 'Students'}</th>
                 <th style={{ width: '220px', textAlign: 'left', paddingLeft: '24px' }}>{locale === 'ar' ? 'الإجراءات' : 'Actions'}</th>
               </tr>
@@ -272,11 +274,11 @@ export default function AdminLocations() {
                 </div>
                 <div className="form-group" style={{ marginBottom: 16 }}>
                   <label className="form-label" style={{ color: 'var(--text-secondary)' }}>
-                    {locale === 'ar' ? 'اسم الصيدلية' : 'Pharmacy Name'} *
+                    {locale === 'ar' ? 'موقع الصيدلية' : 'Pharmacy Location'} *
                   </label>
                   <input
                     className="form-control"
-                    placeholder={locale === 'ar' ? 'مثال: صيدلية النور' : 'e.g. Al-Zuhour'}
+                    placeholder={locale === 'ar' ? 'مثال: حي الزهور' : 'e.g. Al-Zuhour'}
                     value={form.name}
                     onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                     required

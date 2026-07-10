@@ -15,6 +15,7 @@ const routeTitleKeys = {
   '/teacher/profile': 'sideMyProfile',
   '/admin/dashboard': 'sideDashboard',
   '/admin/users': 'sideUsers',
+  '/admin/distribution': 'sideDistribution',
   '/admin/assignments': 'sideAssignments',
   '/admin/locations': 'sideLocations',
   '/admin/visits': 'sideVisits',
