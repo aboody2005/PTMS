@@ -15,6 +15,20 @@ export default function StudentDistribution() {
   const [applying, setApplying] = useState(false);
   const [teacherSearch, setTeacherSearch] = useState('');
   const [monthFilter, setMonthFilter] = useState('');
+  const [assignmentFilter, setAssignmentFilter] = useState('');
+
+  // Helper functions to get IDs
+  const getStudentLocationId = (s) => {
+    if (!s.locationId) return '';
+    if (typeof s.locationId === 'object') return String(s.locationId._id || '');
+    return String(s.locationId);
+  };
+
+  const getStudentTeacherId = (s) => {
+    if (!s.teacherId) return '';
+    if (typeof s.teacherId === 'object') return String(s.teacherId._id || '');
+    return String(s.teacherId);
+  };
 
   const getStudentMonth = (s) => {
     if (!s.startDate) return 'not_set';
@@ -29,9 +43,19 @@ export default function StudentDistribution() {
   };
 
   const filteredStudents = useMemo(() => {
-    if (!monthFilter) return students;
-    return students.filter((s) => getStudentMonth(s) === monthFilter);
-  }, [students, monthFilter]);
+    let result = students;
+    if (monthFilter) {
+      result = result.filter((s) => getStudentMonth(s) === monthFilter);
+    }
+    if (assignmentFilter) {
+      if (assignmentFilter === 'assigned') {
+        result = result.filter((s) => !!getStudentTeacherId(s));
+      } else if (assignmentFilter === 'unassigned') {
+        result = result.filter((s) => !getStudentTeacherId(s));
+      }
+    }
+    return result;
+  }, [students, monthFilter, assignmentFilter]);
 
   // Fetch initial data
   const loadData = async () => {
@@ -57,19 +81,6 @@ export default function StudentDistribution() {
     loadData();
   }, []);
 
-  // Helper functions to get IDs
-  const getStudentLocationId = (s) => {
-    if (!s.locationId) return '';
-    if (typeof s.locationId === 'object') return String(s.locationId._id || '');
-    return String(s.locationId);
-  };
-
-  const getStudentTeacherId = (s) => {
-    if (!s.teacherId) return '';
-    if (typeof s.teacherId === 'object') return String(s.teacherId._id || '');
-    return String(s.teacherId);
-  };
-
   // Count how many students are in each pharmacy
   const studentCountByPharmacy = useMemo(() => {
     const counts = {};
@@ -88,8 +99,8 @@ export default function StudentDistribution() {
     locations.forEach((loc) => {
       if (!loc.isActive) return;
 
-      // If monthFilter is selected, only show locations with students in this month
-      if (monthFilter) {
+      // If monthFilter or assignmentFilter is selected, only show locations with students matching the filters
+      if (monthFilter || assignmentFilter) {
         const studentCount = studentCountByPharmacy[loc._id] || 0;
         if (studentCount === 0) return;
       }
@@ -99,7 +110,7 @@ export default function StudentDistribution() {
       groups[city].push(loc);
     });
     return groups;
-  }, [locations, locale, monthFilter, studentCountByPharmacy]);
+  }, [locations, locale, monthFilter, assignmentFilter, studentCountByPharmacy]);
 
   // Compute stats for each teacher (how many students assigned to them)
   const teacherStats = useMemo(() => {
@@ -130,9 +141,43 @@ export default function StudentDistribution() {
     setMonthFilter(val);
     if (selectedTeacher) {
       const prechecked = new Set();
-      const nextFiltered = val 
-        ? students.filter((s) => getStudentMonth(s) === val) 
-        : students;
+      let nextFiltered = students;
+      if (val) {
+        nextFiltered = nextFiltered.filter((s) => getStudentMonth(s) === val);
+      }
+      if (assignmentFilter) {
+        if (assignmentFilter === 'assigned') {
+          nextFiltered = nextFiltered.filter((s) => !!getStudentTeacherId(s));
+        } else if (assignmentFilter === 'unassigned') {
+          nextFiltered = nextFiltered.filter((s) => !getStudentTeacherId(s));
+        }
+      }
+      nextFiltered.forEach((s) => {
+        if (getStudentTeacherId(s) === selectedTeacher._id) {
+          prechecked.add(s._id);
+        }
+      });
+      setCheckedStudents(prechecked);
+    } else {
+      setCheckedStudents(new Set());
+    }
+  };
+
+  const handleAssignmentFilterChange = (val) => {
+    setAssignmentFilter(val);
+    if (selectedTeacher) {
+      const prechecked = new Set();
+      let nextFiltered = students;
+      if (monthFilter) {
+        nextFiltered = nextFiltered.filter((s) => getStudentMonth(s) === monthFilter);
+      }
+      if (val) {
+        if (val === 'assigned') {
+          nextFiltered = nextFiltered.filter((s) => !!getStudentTeacherId(s));
+        } else if (val === 'unassigned') {
+          nextFiltered = nextFiltered.filter((s) => !getStudentTeacherId(s));
+        }
+      }
       nextFiltered.forEach((s) => {
         if (getStudentTeacherId(s) === selectedTeacher._id) {
           prechecked.add(s._id);
@@ -221,9 +266,17 @@ export default function StudentDistribution() {
         setSelectedTeacher(updatedTeacher);
 
         const prechecked = new Set();
-        const nextFiltered = monthFilter 
-          ? latestStudents.filter((s) => getStudentMonth(s) === monthFilter) 
-          : latestStudents;
+        let nextFiltered = latestStudents;
+        if (monthFilter) {
+          nextFiltered = nextFiltered.filter((s) => getStudentMonth(s) === monthFilter);
+        }
+        if (assignmentFilter) {
+          if (assignmentFilter === 'assigned') {
+            nextFiltered = nextFiltered.filter((s) => !!getStudentTeacherId(s));
+          } else if (assignmentFilter === 'unassigned') {
+            nextFiltered = nextFiltered.filter((s) => !getStudentTeacherId(s));
+          }
+        }
         nextFiltered.forEach((s) => {
           if (getStudentTeacherId(s) === updatedTeacher._id) {
             prechecked.add(s._id);
@@ -297,9 +350,17 @@ export default function StudentDistribution() {
       setSelectedTeacher(updatedTeacher);
 
       const prechecked = new Set();
-      const nextFiltered = monthFilter 
-        ? latestStudents.filter((s) => getStudentMonth(s) === monthFilter) 
-        : latestStudents;
+      let nextFiltered = latestStudents;
+      if (monthFilter) {
+        nextFiltered = nextFiltered.filter((s) => getStudentMonth(s) === monthFilter);
+      }
+      if (assignmentFilter) {
+        if (assignmentFilter === 'assigned') {
+          nextFiltered = nextFiltered.filter((s) => !!getStudentTeacherId(s));
+        } else if (assignmentFilter === 'unassigned') {
+          nextFiltered = nextFiltered.filter((s) => !getStudentTeacherId(s));
+        }
+      }
       nextFiltered.forEach((s) => {
         if (getStudentTeacherId(s) === updatedTeacher._id) {
           prechecked.add(s._id);
@@ -349,21 +410,41 @@ export default function StudentDistribution() {
           </p>
         </div>
 
-        {/* Month Filter Dropdown */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <label style={{ fontWeight: 600, fontSize: '0.9rem', margin: 0 }}>
-            {locale === 'ar' ? 'شهر التدريب:' : 'Training Month:'}
-          </label>
-          <select 
-            className="form-control" 
-            style={{ width: 200 }} 
-            value={monthFilter} 
-            onChange={(e) => handleMonthFilterChange(e.target.value)}
-          >
-            <option value="">{locale === 'ar' ? 'كل شهور التدريب' : 'All Training Months'}</option>
-            <option value="july">{locale === 'ar' ? 'شهر السابع' : 'July (Month 7)'}</option>
-            <option value="august">{locale === 'ar' ? 'شهر الثامن' : 'August (Month 8)'}</option>
-          </select>
+        {/* Filters Group */}
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          {/* Month Filter Dropdown */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <label style={{ fontWeight: 600, fontSize: '0.9rem', margin: 0 }}>
+              {locale === 'ar' ? 'شهر التدريب:' : 'Training Month:'}
+            </label>
+            <select 
+              className="form-control" 
+              style={{ width: 180 }} 
+              value={monthFilter} 
+              onChange={(e) => handleMonthFilterChange(e.target.value)}
+            >
+              <option value="">{locale === 'ar' ? 'كل شهور التدريب' : 'All Training Months'}</option>
+              <option value="july">{locale === 'ar' ? 'شهر السابع' : 'July (Month 7)'}</option>
+              <option value="august">{locale === 'ar' ? 'شهر الثامن' : 'August (Month 8)'}</option>
+            </select>
+          </div>
+
+          {/* Assignment Filter Dropdown */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <label style={{ fontWeight: 600, fontSize: '0.9rem', margin: 0 }}>
+              {locale === 'ar' ? 'حالة التعيين:' : 'Assignment:'}
+            </label>
+            <select 
+              className="form-control" 
+              style={{ width: 180 }} 
+              value={assignmentFilter} 
+              onChange={(e) => handleAssignmentFilterChange(e.target.value)}
+            >
+              <option value="">{locale === 'ar' ? 'كل الطلاب' : 'All Students'}</option>
+              <option value="assigned">{locale === 'ar' ? 'معين' : 'Assigned'}</option>
+              <option value="unassigned">{locale === 'ar' ? 'غير معين' : 'Unassigned'}</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -605,7 +686,7 @@ export default function StudentDistribution() {
                                     style={{ width: '16px', height: '16px', accentColor: 'var(--accent)' }}
                                   />
                                   <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    🏥 {loc.name} {loc.region ? `(${loc.region})` : ''}
+                                    🏥 {loc.name}
                                   </span>
                                 </label>
 
