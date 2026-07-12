@@ -14,6 +14,24 @@ export default function StudentDistribution() {
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
   const [teacherSearch, setTeacherSearch] = useState('');
+  const [monthFilter, setMonthFilter] = useState('');
+
+  const getStudentMonth = (s) => {
+    if (!s.startDate) return 'not_set';
+    try {
+      const month = new Date(s.startDate).getMonth();
+      if (month === 6) return 'july';
+      if (month === 7) return 'august';
+    } catch {}
+    if (s.startDate.includes('-07-')) return 'july';
+    if (s.startDate.includes('-08-')) return 'august';
+    return 'other';
+  };
+
+  const filteredStudents = useMemo(() => {
+    if (!monthFilter) return students;
+    return students.filter((s) => getStudentMonth(s) === monthFilter);
+  }, [students, monthFilter]);
 
   // Fetch initial data
   const loadData = async () => {
@@ -27,6 +45,7 @@ export default function StudentDistribution() {
       setTeachers(tRes.teachers || []);
       setStudents(sRes.students || []);
       setLocations(lRes.locations || []);
+      return { teachers: tRes.teachers || [], students: sRes.students || [] };
     } catch (err) {
       toast.error(locale === 'ar' ? 'فشل تحميل البيانات' : 'Failed to load data');
     } finally {
@@ -51,53 +70,78 @@ export default function StudentDistribution() {
     return String(s.teacherId);
   };
 
-  // Group locations by city
-  const locationsByCity = useMemo(() => {
-    const groups = {};
-    locations.forEach((loc) => {
-      if (!loc.isActive) return;
-      const city = loc.city || (locale === 'ar' ? 'غير محدد' : 'Unspecified');
-      if (!groups[city]) groups[city] = [];
-      groups[city].push(loc);
-    });
-    return groups;
-  }, [locations, locale]);
-
-  // Compute stats for each teacher (how many students assigned to them)
-  const teacherStats = useMemo(() => {
-    const stats = {};
-    students.forEach((s) => {
-      const tId = getStudentTeacherId(s);
-      if (tId) {
-        stats[tId] = (stats[tId] || 0) + 1;
-      }
-    });
-    return stats;
-  }, [students]);
-
   // Count how many students are in each pharmacy
   const studentCountByPharmacy = useMemo(() => {
     const counts = {};
-    students.forEach((s) => {
+    filteredStudents.forEach((s) => {
       const locId = getStudentLocationId(s);
       if (locId) {
         counts[locId] = (counts[locId] || 0) + 1;
       }
     });
     return counts;
-  }, [students]);
+  }, [filteredStudents]);
+
+  // Group locations by city
+  const locationsByCity = useMemo(() => {
+    const groups = {};
+    locations.forEach((loc) => {
+      if (!loc.isActive) return;
+
+      // If monthFilter is selected, only show locations with students in this month
+      if (monthFilter) {
+        const studentCount = studentCountByPharmacy[loc._id] || 0;
+        if (studentCount === 0) return;
+      }
+
+      const city = loc.city || (locale === 'ar' ? 'غير محدد' : 'Unspecified');
+      if (!groups[city]) groups[city] = [];
+      groups[city].push(loc);
+    });
+    return groups;
+  }, [locations, locale, monthFilter, studentCountByPharmacy]);
+
+  // Compute stats for each teacher (how many students assigned to them)
+  const teacherStats = useMemo(() => {
+    const stats = {};
+    filteredStudents.forEach((s) => {
+      const tId = getStudentTeacherId(s);
+      if (tId) {
+        stats[tId] = (stats[tId] || 0) + 1;
+      }
+    });
+    return stats;
+  }, [filteredStudents]);
 
   // Handle teacher selection
   const selectTeacher = (teacher) => {
     setSelectedTeacher(teacher);
     // Find all students currently assigned to this teacher and check them
     const prechecked = new Set();
-    students.forEach((s) => {
+    filteredStudents.forEach((s) => {
       if (getStudentTeacherId(s) === teacher._id) {
         prechecked.add(s._id);
       }
     });
     setCheckedStudents(prechecked);
+  };
+
+  const handleMonthFilterChange = (val) => {
+    setMonthFilter(val);
+    if (selectedTeacher) {
+      const prechecked = new Set();
+      const nextFiltered = val 
+        ? students.filter((s) => getStudentMonth(s) === val) 
+        : students;
+      nextFiltered.forEach((s) => {
+        if (getStudentTeacherId(s) === selectedTeacher._id) {
+          prechecked.add(s._id);
+        }
+      });
+      setCheckedStudents(prechecked);
+    } else {
+      setCheckedStudents(new Set());
+    }
   };
 
   // Toggle single student selection
@@ -134,7 +178,7 @@ export default function StudentDistribution() {
     // Collect all eligible students in this city
     const cityEligibleStudents = [];
     cityPharmacies.forEach((loc) => {
-      const locStudents = students.filter((s) => getStudentLocationId(s) === loc._id);
+      const locStudents = filteredStudents.filter((s) => getStudentLocationId(s) === loc._id);
       const eligible = locStudents.filter(
         (s) => !getStudentTeacherId(s) || getStudentTeacherId(s) === selectedTeacher._id
       );
@@ -169,7 +213,24 @@ export default function StudentDistribution() {
           ? `تم إلغاء تعيين الطالب ${studentName} بنجاح.`
           : `Successfully unassigned ${studentName}.`
       );
-      await loadData();
+      const data = await loadData();
+      if (selectedTeacher) {
+        const latestTeachers = data?.teachers || teachers;
+        const latestStudents = data?.students || students;
+        const updatedTeacher = latestTeachers.find(t => t._id === selectedTeacher._id) || selectedTeacher;
+        setSelectedTeacher(updatedTeacher);
+
+        const prechecked = new Set();
+        const nextFiltered = monthFilter 
+          ? latestStudents.filter((s) => getStudentMonth(s) === monthFilter) 
+          : latestStudents;
+        nextFiltered.forEach((s) => {
+          if (getStudentTeacherId(s) === updatedTeacher._id) {
+            prechecked.add(s._id);
+          }
+        });
+        setCheckedStudents(prechecked);
+      }
     } catch (err) {
       toast.error(locale === 'ar' ? 'فشل إلغاء تعيين الطالب' : 'Failed to unassign student');
     }
@@ -181,7 +242,7 @@ export default function StudentDistribution() {
 
     const updates = [];
     
-    students.forEach((s) => {
+    filteredStudents.forEach((s) => {
       const currentTeacherId = getStudentTeacherId(s);
 
       // Eligible student check (unassigned or currently assigned to this teacher)
@@ -227,11 +288,24 @@ export default function StudentDistribution() {
       );
 
       // Reload data to reflect changes
-      await loadData();
+      const data = await loadData();
 
       // Refresh selection state with updated data
-      const updatedTeacher = teachers.find(t => t._id === selectedTeacher._id) || selectedTeacher;
-      selectTeacher(updatedTeacher);
+      const latestTeachers = data?.teachers || teachers;
+      const latestStudents = data?.students || students;
+      const updatedTeacher = latestTeachers.find(t => t._id === selectedTeacher._id) || selectedTeacher;
+      setSelectedTeacher(updatedTeacher);
+
+      const prechecked = new Set();
+      const nextFiltered = monthFilter 
+        ? latestStudents.filter((s) => getStudentMonth(s) === monthFilter) 
+        : latestStudents;
+      nextFiltered.forEach((s) => {
+        if (getStudentTeacherId(s) === updatedTeacher._id) {
+          prechecked.add(s._id);
+        }
+      });
+      setCheckedStudents(prechecked);
     } catch (err) {
       toast.error(locale === 'ar' ? 'حدث خطأ أثناء حفظ التوزيع' : 'An error occurred while saving distribution');
     } finally {
@@ -251,8 +325,8 @@ export default function StudentDistribution() {
   // Compute list of students currently checked to be assigned to this teacher
   const affectedStudentsList = useMemo(() => {
     if (!selectedTeacher) return [];
-    return students.filter((s) => checkedStudents.has(s._id));
-  }, [students, selectedTeacher, checkedStudents]);
+    return filteredStudents.filter((s) => checkedStudents.has(s._id));
+  }, [filteredStudents, selectedTeacher, checkedStudents]);
 
   if (loading) {
     return (
@@ -265,13 +339,32 @@ export default function StudentDistribution() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header */}
-      <div className="page-header">
-        <h1>{t('sideDistribution')}</h1>
-        <p className="text-muted">
-          {locale === 'ar'
-            ? 'توزيع وتعيين المشرفين الأكاديميين على الطلاب بشكل جماعي بناءً على مواقع صيدليات التدريب.'
-            : 'Bulk assign academic supervisors to students based on training pharmacy locations.'}
-        </p>
+      <div className="page-header flex-between" style={{ flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h1>{t('sideDistribution')}</h1>
+          <p className="text-muted">
+            {locale === 'ar'
+              ? 'توزيع وتعيين المشرفين الأكاديميين على الطلاب بشكل جماعي بناءً على مواقع صيدليات التدريب.'
+              : 'Bulk assign academic supervisors to students based on training pharmacy locations.'}
+          </p>
+        </div>
+
+        {/* Month Filter Dropdown */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ fontWeight: 600, fontSize: '0.9rem', margin: 0 }}>
+            {locale === 'ar' ? 'شهر التدريب:' : 'Training Month:'}
+          </label>
+          <select 
+            className="form-control" 
+            style={{ width: 200 }} 
+            value={monthFilter} 
+            onChange={(e) => handleMonthFilterChange(e.target.value)}
+          >
+            <option value="">{locale === 'ar' ? 'كل شهور التدريب' : 'All Training Months'}</option>
+            <option value="july">{locale === 'ar' ? 'شهر السابع' : 'July (Month 7)'}</option>
+            <option value="august">{locale === 'ar' ? 'شهر الثامن' : 'August (Month 8)'}</option>
+          </select>
+        </div>
       </div>
 
       {/* Teachers Table Panel (Top / Full-Width) */}
@@ -421,7 +514,7 @@ export default function StudentDistribution() {
                   // Extract all eligible students across this entire city
                   const cityEligibleStudents = [];
                   cityPharmacies.forEach((loc) => {
-                    const locStudents = students.filter((s) => getStudentLocationId(s) === loc._id);
+                    const locStudents = filteredStudents.filter((s) => getStudentLocationId(s) === loc._id);
                     const eligible = locStudents.filter(
                       (s) => !getStudentTeacherId(s) || getStudentTeacherId(s) === selectedTeacher._id
                     );
@@ -479,7 +572,7 @@ export default function StudentDistribution() {
                       <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {cityPharmacies.map((loc) => {
                           const studentCount = studentCountByPharmacy[loc._id] || 0;
-                          const locStudents = students.filter(s => getStudentLocationId(s) === loc._id);
+                          const locStudents = filteredStudents.filter(s => getStudentLocationId(s) === loc._id);
 
                           const eligibleStudents = locStudents.filter(
                             (s) => !getStudentTeacherId(s) || getStudentTeacherId(s) === selectedTeacher._id
