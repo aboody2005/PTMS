@@ -129,7 +129,7 @@ export default function AdminReports() {
           <option value="">{t('allLocations')}</option>
           {locations.map(l => (
             <option key={l._id} value={l._id}>
-              {l.city} — {l.name} {l.region ? `(${l.region})` : ''}
+              {l.city} — {l.name}
             </option>
           ))}
         </select>
@@ -137,7 +137,17 @@ export default function AdminReports() {
 
       <div className="card" style={{padding:0}}>
         <div className="table-wrapper">
-          <table>
+          <table style={{ tableLayout: 'fixed', width: '100%' }}>
+            <colgroup>
+              <col style={{ width: '4%' }} />   {/* # */}
+              <col style={{ width: '22%' }} />  {/* اسم الطالب */}
+              <col style={{ width: '12%' }} />  {/* الجامعة */}
+              <col style={{ width: '17%' }} />  {/* صيدلية التدريب */}
+              <col style={{ width: '18%' }} />  {/* موقع الصيدلية */}
+              <col style={{ width: '11%' }} />  {/* مشرف أكاديمي */}
+              <col style={{ width: '7%' }} />   {/* الحالة */}
+              <col style={{ width: '9%' }} />   {/* تاريخ آخر زيارة */}
+            </colgroup>
             <thead>
               <tr>
                 <th>#</th>
@@ -147,13 +157,12 @@ export default function AdminReports() {
                 <th>{locale === 'ar' ? 'موقع الصيدلية' : 'Location'}</th>
                 <th>{t('roleTeacher')}</th>
                 <th>{t('statusLabel')}</th>
-                <th>{locale === 'ar' ? 'الزيارات' : 'Visits'}</th>
                 <th>{locale === 'ar' ? 'تاريخ آخر زيارة' : 'Last Visit'}</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0
-                ? <tr><td colSpan={9} style={{textAlign:'center',padding:'32px',color:'var(--text-muted)'}}>{locale === 'ar' ? 'لا توجد بيانات متاحة حالياً.' : 'No data available.'}</td></tr>
+                ? <tr><td colSpan={8} style={{textAlign:'center',padding:'32px',color:'var(--text-muted)'}}>{locale === 'ar' ? 'لا توجد بيانات متاحة حالياً.' : 'No data available.'}</td></tr>
                 : filtered.map((r, i) => (
                   <tr key={r.student.id}>
                     <td className="text-muted">{i+1}</td>
@@ -167,11 +176,10 @@ export default function AdminReports() {
                       )}
                     </td>
                     <td className="text-sm">{r.student.university||'—'}</td>
-                    <td className="text-sm">{r.student.pharmacyName||'—'}</td>
-                    <td className="text-sm">{r.student.city ? `${r.student.city}, ${r.student.location}` : '—'}</td>
-                    <td className="text-sm">{r.student.teacher||<span className="text-muted">{locale === 'ar' ? 'غير معين' : 'Unassigned'}</span>}</td>
-                    <td><span className={`badge badge-${r.student.status === 'completed' ? 'completed' : 'active'}`}>{r.student.status === 'completed' ? t('completedHours') : t('activeTraining')}</span></td>
-                    <td><strong>{r.visitCount}</strong></td>
+                    <td className="text-sm" style={{ overflowWrap: 'break-word', whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.student.pharmacyName||'—'}</td>
+                    <td className="text-sm" style={{ overflowWrap: 'break-word', whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.student.city ? `${r.student.city}, ${r.student.location}` : '—'}</td>
+                    <td className="text-sm" style={{ overflowWrap: 'break-word' }}>{r.student.teacher||<span className="text-muted">{locale === 'ar' ? 'غير معين' : 'Unassigned'}</span>}</td>
+                    <td style={{ textAlign: 'center' }}><div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', paddingLeft: '14px' }}><span className={`badge badge-${r.student.status === 'completed' ? 'completed' : 'active'}`}>{r.student.status === 'completed' ? t('completedHours') : t('activeTraining')}</span></div></td>
                     <td className="text-sm text-muted">{r.lastVisit ? format(new Date(r.lastVisit),'dd/MM/yyyy') : (locale === 'ar' ? 'لا يوجد' : 'None')}</td>
                   </tr>
                 ))

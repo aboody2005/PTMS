@@ -98,7 +98,16 @@ export default function TeacherReports() {
 
       <div className="card" style={{padding:0}}>
         <div className="table-wrapper">
-          <table>
+          <table style={{ tableLayout: 'fixed', width: '100%' }}>
+            <colgroup>
+              <col style={{ width: '4%' }} />   {/* # */}
+              <col style={{ width: '24%' }} />  {/* اسم الطالب */}
+              <col style={{ width: '14%' }} />  {/* الجامعة */}
+              <col style={{ width: '20%' }} />  {/* صيدلية التدريب */}
+              <col style={{ width: '22%' }} />  {/* موقع الصيدلية */}
+              <col style={{ width: '8%' }} />   {/* الحالة */}
+              <col style={{ width: '8%' }} />   {/* تاريخ آخر زيارة */}
+            </colgroup>
             <thead>
               <tr>
                 <th>#</th>
@@ -107,13 +116,12 @@ export default function TeacherReports() {
                 <th>{locale === 'ar' ? 'صيدلية التدريب' : 'Pharmacy'}</th>
                 <th>{locale === 'ar' ? 'موقع الصيدلية' : 'Location'}</th>
                 <th>{t('statusLabel')}</th>
-                <th>{locale === 'ar' ? 'الزيارات' : 'Visits'}</th>
                 <th>{locale === 'ar' ? 'تاريخ آخر زيارة' : 'Last Visit'}</th>
               </tr>
             </thead>
             <tbody>
               {reports.length === 0
-                ? <tr><td colSpan={8} style={{textAlign:'center',padding:'32px',color:'var(--text-muted)'}}>{t('noReportsYet')}</td></tr>
+                ? <tr><td colSpan={7} style={{textAlign:'center',padding:'32px',color:'var(--text-muted)'}}>{t('noReportsYet')}</td></tr>
                 : reports.map((r, i) => (
                   <tr key={r.student.id}>
                     <td className="text-muted">{i + 1}</td>
@@ -126,10 +134,9 @@ export default function TeacherReports() {
                       )}
                     </td>
                     <td className="text-sm">{r.student.university || '—'}</td>
-                    <td className="text-sm">{r.student.pharmacyName || '—'}</td>
-                    <td className="text-sm">{r.student.location ? `${r.student.location}, ${r.student.city}` : '—'}</td>
-                    <td><span className={`badge badge-${r.student.status === 'completed' ? 'completed' : 'active'}`}>{r.student.status === 'completed' ? t('completedHours') : t('activeTraining')}</span></td>
-                    <td><strong>{r.visitCount}</strong></td>
+                    <td className="text-sm" style={{ overflowWrap: 'break-word', whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.student.pharmacyName || '—'}</td>
+                    <td className="text-sm" style={{ overflowWrap: 'break-word', whiteSpace: 'normal', wordBreak: 'break-word' }}>{r.student.city ? `${r.student.city}, ${r.student.location}` : '—'}</td>
+                    <td style={{ textAlign: 'center' }}><div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', paddingLeft: '14px' }}><span className={`badge badge-${r.student.status === 'completed' ? 'completed' : 'active'}`}>{r.student.status === 'completed' ? t('completedHours') : t('activeTraining')}</span></div></td>
                     <td className="text-sm text-muted">{r.lastVisit ? format(new Date(r.lastVisit), 'dd/MM/yyyy') : (locale === 'ar' ? 'لا يوجد' : 'None')}</td>
                   </tr>
                 ))

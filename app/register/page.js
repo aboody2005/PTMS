@@ -641,7 +641,7 @@ export default function RegisterPage() {
                   </option>
                   {locations.map((l) => (
                     <option key={l.id || l._id} value={l.id || l._id}>
-                      {l.city} — {l.name} {l.region ? `(${l.region})` : ''}
+                      {l.city} — {l.name}
                     </option>
                   ))}
                 </select>

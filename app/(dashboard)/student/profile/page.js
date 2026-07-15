@@ -19,7 +19,7 @@ export default function StudentProfile() {
   const fileRef = useRef();
 
   const [userForm, setUserForm] = useState({ name: '', email: '', phone: '', gender: '', profileImage: '', password: '', confirmPassword: '' });
-  const [studentForm, setStudentForm] = useState({ university: '', pharmacyName: '', startDate: '', endDate: '', locationId: '', latitude: null, longitude: null, attendanceStart: '', attendanceEnd: '', trainingDays: [] });
+  const [studentForm, setStudentForm] = useState({ university: '', pharmacyName: '', pharmacyNotes: '', startDate: '', endDate: '', locationId: '', latitude: null, longitude: null, attendanceStart: '', attendanceEnd: '', trainingDays: [] });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -55,6 +55,7 @@ export default function StudentProfile() {
         });
         setStudentForm({
           university: 'جامعة الحدباء', pharmacyName: s.pharmacyName || '',
+          pharmacyNotes: s.pharmacyNotes || '',
           startDate: s.startDate ? s.startDate.split('T')[0] : '',
           endDate: s.endDate ? s.endDate.split('T')[0] : '',
           locationId: s.locationId?._id || '', latitude: s.latitude, longitude: s.longitude,
@@ -465,7 +466,7 @@ export default function StudentProfile() {
                 <option value="">{locale === 'ar' ? 'اختر الموقع...' : 'Select location...'}</option>
                 {locations.map(l => (
                   <option key={l.id || l._id} value={l.id || l._id}>
-                    {l.city} — {l.name} {l.region ? `(${l.region})` : ''}
+                    {l.city} — {l.name}
                   </option>
                 ))}
               </select>
@@ -476,6 +477,23 @@ export default function StudentProfile() {
                   </button>
                 </div>
               )}
+            </div>
+
+            {/* Pharmacy Change Notes */}
+            <div className="form-group">
+              <label className="form-label" style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
+                📝 {locale === 'ar' ? 'ملاحظات' : 'Notes'}
+              </label>
+              <textarea
+                className="form-control"
+                rows={3}
+                placeholder={locale === 'ar'
+                  ? 'في حال غيرت الصيدلية اكتب بالحقل اسم الصيدلية القديمة والجديدة وسبب التغير'
+                  : 'If you changed the pharmacy, write the old pharmacy name, new name, and reason for the change'}
+                value={studentForm.pharmacyNotes}
+                onChange={e => setStudentForm(p => ({ ...p, pharmacyNotes: e.target.value }))}
+                style={{ resize: 'vertical', minHeight: 80 }}
+              />
             </div>
           </div>
 

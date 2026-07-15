@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS students (
   status TEXT DEFAULT 'active' CHECK (status IN ('active', 'completed')),
   attendance_start TEXT DEFAULT NULL,
   attendance_end TEXT DEFAULT NULL,
+  pharmacy_notes TEXT DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

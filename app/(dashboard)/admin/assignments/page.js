@@ -436,7 +436,7 @@ export default function AdminAssignments() {
           <option value="">{t('allLocations')}</option>
           {locations.map(l => (
             <option key={l._id} value={l._id}>
-              {l.city} — {l.name} {l.region ? `(${l.region})` : ''} {!l.isActive && (locale === 'ar' ? ' (غير نشط)' : ' (Inactive)')}
+              {l.city} — {l.name} {!l.isActive && (locale === 'ar' ? ' (غير نشط)' : ' (Inactive)')}
             </option>
           ))}
         </select>
@@ -930,7 +930,7 @@ export default function AdminAssignments() {
                     <option value="">{locale === 'ar' ? '— غير محدد —' : '— Select Location —'}</option>
                     {locations.map(l => (
                       <option key={l._id} value={l._id}>
-                        {l.city} — {l.name} {l.region ? `(${l.region})` : ''} {!l.isActive && (locale === 'ar' ? ' (غير نشط)' : ' (Inactive)')}
+                        {l.city} — {l.name} {!l.isActive && (locale === 'ar' ? ' (غير نشط)' : ' (Inactive)')}
                       </option>
                     ))}
                   </select>

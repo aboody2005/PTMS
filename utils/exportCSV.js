@@ -185,6 +185,7 @@ export async function exportReportsExcel(
     { width: 42 },    // E (اسم الصيدلية) -> 42
     { width: 40 },    // F (أيام التواجد) -> 40
     { width: 28.29 }, // G (ساعات التواجد) -> 28.29
+    { width: 30.5 },  // H (ملاحظة)
   ];
 
   const wb = new ExcelJS.Workbook();
@@ -196,7 +197,7 @@ export async function exportReportsExcel(
   // ══════════════════════════════════════════════════════
   const ws1 = wb.addWorksheet(isAr ? 'الطلبة المسجلون' : 'Registered', {
     views: [{ rightToLeft: isAr }],
-    pageSetup: { paperSize: 9, orientation: 'landscape', scale: 55 } // paperSize 9 = A4, landscape, 55% scale
+    pageSetup: { paperSize: 9, orientation: 'landscape', scale: 49 } // paperSize 9 = A4, landscape, 55% scale
   });
 
   // Column widths
@@ -207,23 +208,23 @@ export async function exportReportsExcel(
     : 'Third Stage (Rising to Fourth Stage)';
 
   const headers = isAr
-    ? ['ت', 'اسم الطالب', 'رقم هاتف الطالب', 'عنوان الصيدلية', 'اسم الصيدلية', 'أيام التواجد', 'ساعات التواجد']
-    : ['No.', 'Student Name', 'Student Phone', 'Pharmacy Address', 'Pharmacy Name', 'Training Days', 'Attendance Hours'];
+    ? ['ت', 'اسم الطالب', 'رقم هاتف الطالب', 'عنوان الصيدلية', 'اسم الصيدلية', 'أيام التواجد', 'ساعات التواجد', 'ملاحظة']
+    : ['No.', 'Student Name', 'Student Phone', 'Pharmacy Address', 'Pharmacy Name', 'Training Days', 'Attendance Hours', 'Notes'];
 
-  // ── Title banner row (merged A1:G1) ────────────────────
-  const titleRow = ws1.addRow([title, '', '', '', '', '', '']);
+  // ── Title banner row (merged A1:H1) ──────────────────────────────────
+  const titleRow = ws1.addRow([title, '', '', '', '', '', '', '']);
   titleRow.height = 50;
-  ws1.mergeCells(`A1:G1`);
-  for (let c = 1; c <= 7; c++) {
+  ws1.mergeCells(`A1:H1`);
+  for (let c = 1; c <= 8; c++) {
     const cell = titleRow.getCell(c);
     applyHeaderStyle(cell);
     cell.alignment = { ...centerAlign, wrapText: true };
   }
 
-  // ── Header row ─────────────────────────────────────────
+  // ── Header row ──────────────────────────────────────────────
   const headerRow = ws1.addRow(headers);
   headerRow.height = 40;
-  for (let c = 1; c <= 7; c++) {
+  for (let c = 1; c <= 8; c++) {
     applyHeaderStyle(headerRow.getCell(c), c >= 4);
   }
 
@@ -247,12 +248,14 @@ export async function exportReportsExcel(
       r.student.pharmacyName || '',
       formatTrainingDays(r.student.trainingDays, isAr),
       hours,
+      r.student.pharmacyNotes || '',
     ]);
-    row.eachCell((cell, colNum) => {
+    for (let colNum = 1; colNum <= 8; colNum++) {
+      const cell = row.getCell(colNum);
       const isWrap = colNum >= 4;
       const isTextFormat = colNum === 1 || colNum === 3;
       applyDataStyle(cell, isTextFormat, isWrap);
-    });
+    }
   });
 
   // ── Teacher summary (optional) ─────────────────────────
@@ -260,13 +263,13 @@ export async function exportReportsExcel(
     ws1.addRow([]); // spacer
     const labelRow = ws1.addRow(
       isAr
-        ? ['', 'الدكتور المشرف', 'عدد الطلاب', '', '', '', '']
-        : ['', 'Supervisor', 'No. of Students', '', '', '', '']
+        ? ['', 'الدكتور المشرف', 'عدد الطلاب', '', '', '', '', '']
+        : ['', 'Supervisor', 'No. of Students', '', '', '', '', '']
     );
     labelRow.height = 40;
     [2, 3].forEach(c => applyHeaderStyle(labelRow.getCell(c)));
 
-    const valRow = ws1.addRow(['', teacherName, reports.length, '', '', '', '']);
+    const valRow = ws1.addRow(['', teacherName, reports.length, '', '', '', '', '']);
     valRow.height = 40;
     [2, 3].forEach(c => applyDataStyle(valRow.getCell(c)));
   }
@@ -285,7 +288,7 @@ export async function exportReportsExcel(
     const startRowIndex = ws1.lastRow.number + 1;
 
     // Add title row for unregistered table (A & B merged)
-    const titleRow2 = ws1.addRow([secondTitle, '', '', '', '', '', '']);
+    const titleRow2 = ws1.addRow([secondTitle, '', '', '', '', '', '', '']);
     titleRow2.height = 50;
     ws1.mergeCells(`A${startRowIndex}:B${startRowIndex}`);
 
@@ -299,7 +302,7 @@ export async function exportReportsExcel(
 
     // Headers row: ت and اسم الطالب
     const nextRowIndex = ws1.lastRow.number + 1;
-    const hRow2 = ws1.addRow(isAr ? ['ت', 'اسم الطالب', '', '', '', '', ''] : ['No.', 'Student Name', '', '', '', '', '']);
+    const hRow2 = ws1.addRow(isAr ? ['ت', 'اسم الطالب', '', '', '', '', '', ''] : ['No.', 'Student Name', '', '', '', '', '', '']);
     hRow2.height = 40;
 
     [1, 2].forEach(colIndex => {
@@ -316,7 +319,7 @@ export async function exportReportsExcel(
     );
 
     sortedUnreg.forEach((s, idx) => {
-      const row = ws1.addRow([String(idx + 1), s.name || '', '', '', '', '', '']);
+      const row = ws1.addRow([String(idx + 1), s.name || '', '', '', '', '', '', '']);
       applyDataStyle(row.getCell(1), true); // col A formatted as Text
       applyDataStyle(row.getCell(2), false);
     });

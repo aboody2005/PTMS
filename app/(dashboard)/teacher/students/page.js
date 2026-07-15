@@ -25,6 +25,8 @@ export default function TeacherStudents() {
   const [locations, setLocations] = useState([]);
   const [search, setSearch] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
+  const [dayFilter, setDayFilter] = useState('');
+  const [timeFilter, setTimeFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [viewMode, setViewMode] = useState('visit'); // 'visit' | 'view'
@@ -35,7 +37,7 @@ export default function TeacherStudents() {
   const load = async () => {
     setLoading(true);
     try {
-      const params = { page, limit: 10 };
+      const params = { page, limit: 1000 };
       if (locationFilter) params.locationId = locationFilter;
 
       const [sRes, allStudentsRes] = await Promise.all([
@@ -72,13 +74,27 @@ export default function TeacherStudents() {
     .filter((s) => {
       const locStr = s.locationId ? `${s.locationId.city} ${s.locationId.region || s.locationId.name || ''}` : '';
       const pharmacy = s.pharmacyName || '';
-      return !search ||
+      const matchSearch = !search ||
         s.userId?.name?.toLowerCase().includes(search.toLowerCase()) ||
         s.userId?.email?.toLowerCase().includes(search.toLowerCase()) ||
         pharmacy.toLowerCase().includes(search.toLowerCase()) ||
         locStr.toLowerCase().includes(search.toLowerCase());
+      const matchDay = !dayFilter || (Array.isArray(s.trainingDays) && s.trainingDays.includes(dayFilter));
+      const matchTime = !timeFilter || s.attendanceStart === timeFilter;
+      return matchSearch && matchDay && matchTime;
     })
     .sort((a, b) => (a.userId?.name || '').localeCompare(b.userId?.name || '', 'ar'));
+
+  // Only show days/times that exist among THIS teacher's students
+  const DAY_ORDER = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  const DAY_LABELS = { sunday:'الأحد', monday:'الاثنين', tuesday:'الثلاثاء', wednesday:'الأربعاء', thursday:'الخميس', friday:'الجمعة', saturday:'السبت' };
+  const availableDays = DAY_ORDER.filter(d =>
+    students.some(s => Array.isArray(s.trainingDays) && s.trainingDays.includes(d))
+  );
+  const availableTimes = Object.keys(TIME_LABELS).filter(t =>
+    students.some(s => s.attendanceStart === t)
+  );
+
 
   /** Open student details in visit mode (can confirm visit) */
   const openVisit = (s) => {
@@ -117,8 +133,12 @@ export default function TeacherStudents() {
         <h1>{t('sideMyStudents')}</h1>
         <p className="text-muted">
           {locale === 'ar'
-            ? 'عرض وإدارة الطلاب المعينين لك في التدريب'
+            ? `عرض وإدارة الطلاب المعينين لك في التدريب`
             : 'View and manage your assigned training students'}
+          {' '}
+          <span style={{ color: 'var(--accent)', fontWeight: 700 }}>
+            ({filtered.length} {locale === 'ar' ? 'طالب' : 'students'})
+          </span>
         </p>
       </div>
 
@@ -147,6 +167,34 @@ export default function TeacherStudents() {
             </option>
           ))}
         </select>
+        {/* Day filter */}
+        <select
+          className="form-control"
+          style={{ width: 180 }}
+          value={dayFilter}
+          onChange={(e) => setDayFilter(e.target.value)}
+        >
+          <option value="">{locale === 'ar' ? 'جميع الأيام' : 'All Days'}</option>
+          {availableDays.map((d) => (
+            <option key={d} value={d}>
+              {DAY_LABELS[d] || d}
+            </option>
+          ))}
+        </select>
+        {/* Time filter */}
+        <select
+          className="form-control"
+          style={{ width: 180 }}
+          value={timeFilter}
+          onChange={(e) => setTimeFilter(e.target.value)}
+        >
+          <option value="">{locale === 'ar' ? 'جميع الأوقات' : 'All Times'}</option>
+          {availableTimes.map((t) => (
+            <option key={t} value={t}>
+              {TIME_LABELS[t] || t}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Table */}
@@ -162,6 +210,8 @@ export default function TeacherStudents() {
                   <th>{locale === 'ar' ? 'الصيدلية / الموقع' : 'Pharmacy / Location'}</th>
                   <th>{t('statusLabel')}</th>
                   <th>{locale === 'ar' ? 'شهر التدريب' : 'Month of Training'}</th>
+                  <th>{locale === 'ar' ? 'أيام التدريب' : 'Training Days'}</th>
+                  <th>{locale === 'ar' ? 'ساعات التواجد' : 'Attendance Hours'}</th>
                   <th>{t('actions')}</th>
                 </tr>
               </thead>
@@ -206,6 +256,23 @@ export default function TeacherStudents() {
                               : (locale === 'ar' ? 'غير محدد' : 'Not set')
                         ) : (locale === 'ar' ? 'غير محدد' : 'Not set')}
                       </td>
+                      {/* Training Days */}
+                      <td className="text-xs" style={{ whiteSpace: 'normal', wordBreak: 'break-word', maxWidth: 140 }}>
+                        {Array.isArray(s.trainingDays) && s.trainingDays.length > 0
+                          ? (s.trainingDays.length === 7
+                              ? (locale === 'ar' ? 'كل الأيام' : 'All Days')
+                              : s.trainingDays.map(d => ({
+                                  sunday:'الأحد',monday:'الاثنين',tuesday:'الثلاثاء',wednesday:'الأربعاء',thursday:'الخميس',friday:'الجمعة',saturday:'السبت',
+                                })[d] || d).join('، '))
+                          : '—'}
+                      </td>
+                      {/* Attendance Hours */}
+                      <td className="text-xs text-muted" style={{ whiteSpace: 'nowrap' }}>
+                        {s.attendanceStart && s.attendanceEnd
+                          ? `${fmt12h(s.attendanceStart)} - ${fmt12h(s.attendanceEnd)}`
+                          : s.attendanceStart ? fmt12h(s.attendanceStart)
+                          : '—'}
+                      </td>
                       <td>
                         {s.isVisited ? (
                           /* Visited: clickable badge that opens read-only details */
@@ -248,24 +315,6 @@ export default function TeacherStudents() {
             </table>
           </div>
 
-          {/* Pagination */}
-          <div className="pagination">
-            <button disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
-              {locale === 'ar' ? 'السابق →' : '← Prev'}
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => (
-              <button
-                key={i}
-                className={page === i + 1 ? 'active' : ''}
-                onClick={() => setPage(i + 1)}
-              >
-                {i + 1}
-              </button>
-            ))}
-            <button disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
-              {locale === 'ar' ? '← التالي' : 'Next →'}
-            </button>
-          </div>
         </>
       )}
 
