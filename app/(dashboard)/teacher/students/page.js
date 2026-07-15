@@ -27,12 +27,21 @@ export default function TeacherStudents() {
   const [locationFilter, setLocationFilter] = useState('');
   const [dayFilter, setDayFilter] = useState('');
   const [timeFilter, setTimeFilter] = useState('');
+  const [visitFilter, setVisitFilter] = useState('all'); // 'all' | 'visited' | 'not_visited'
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [viewMode, setViewMode] = useState('visit'); // 'visit' | 'view'
   const [visiting, setVisiting] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const load = async () => {
     setLoading(true);
@@ -81,7 +90,12 @@ export default function TeacherStudents() {
         locStr.toLowerCase().includes(search.toLowerCase());
       const matchDay = !dayFilter || (Array.isArray(s.trainingDays) && s.trainingDays.includes(dayFilter));
       const matchTime = !timeFilter || s.attendanceStart === timeFilter;
-      return matchSearch && matchDay && matchTime;
+      const matchVisit = visitFilter === 'all'
+        ? true
+        : visitFilter === 'visited'
+          ? s.isVisited
+          : !s.isVisited;
+      return matchSearch && matchDay && matchTime && matchVisit;
     })
     .sort((a, b) => (a.userId?.name || '').localeCompare(b.userId?.name || '', 'ar'));
 
@@ -142,6 +156,58 @@ export default function TeacherStudents() {
         </p>
       </div>
 
+      {/* Stats Cards */}
+      <div className="grid grid-3" style={{ marginBottom: 24 }}>
+        {[
+          {
+            key: 'all',
+            label: locale === 'ar' ? 'إجمالي الطلاب' : 'Total Students',
+            value: students.length,
+            icon: '👥',
+            color: 'var(--accent)',
+            bg: 'var(--accent-dim)'
+          },
+          {
+            key: 'visited',
+            label: locale === 'ar' ? 'تمت زيارتهم' : 'Visited',
+            value: students.filter(s => s.isVisited).length,
+            icon: '✅',
+            color: 'var(--green)',
+            bg: 'var(--green-dim)'
+          },
+          {
+            key: 'not_visited',
+            label: locale === 'ar' ? 'لم تتم زيارتهم' : 'Not Visited',
+            value: students.filter(s => !s.isVisited).length,
+            icon: '⌛',
+            color: 'var(--yellow)',
+            bg: 'var(--yellow-dim)'
+          }
+        ].map(({ key, label, value, icon, color, bg }) => {
+          const isActive = visitFilter === key;
+          return (
+            <div
+              key={key}
+              className="stat-card"
+              style={{
+                cursor: 'pointer',
+                border: isActive ? `2px solid ${color}` : '2px solid transparent',
+                transform: isActive ? 'scale(1.02)' : 'none',
+                transition: 'all 0.2s ease',
+                boxShadow: isActive ? '0 4px 12px rgba(0,0,0,0.1)' : 'none'
+              }}
+              onClick={() => setVisitFilter(key)}
+            >
+              <div className="stat-icon" style={{ background: bg, color }}>{icon}</div>
+              <div className="stat-info">
+                <p>{label}</p>
+                <h3>{value}</h3>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Filters */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         <div className="search-bar" style={{ flex: 1, minWidth: 200 }}>
@@ -197,94 +263,130 @@ export default function TeacherStudents() {
         </select>
       </div>
 
-      {/* Table */}
+      {/* ── Student List (Card-based design like admin/assignments) ── */}
       {loading ? (
         <div className="flex-center" style={{ height: 200 }}><div className="spinner" /></div>
       ) : (
-        <>
-          <div className="table-wrapper card" style={{ padding: 0, overflowX: 'auto' }}>
-            <table style={{ tableLayout: 'fixed', width: '100%', minWidth: '850px' }}>
-              <colgroup>
-                <col style={{ width: '20%' }} />   {/* الطالب */}
-                <col style={{ width: '22%' }} />  {/* الصيدلية / الموقع */}
-                <col style={{ width: '10%' }} />  {/* الحالة */}
-                <col style={{ width: '12%' }} />  {/* شهر التدريب */}
-                <col style={{ width: '16%' }} />  {/* أيام التدريب */}
-                <col style={{ width: '12%' }} />  {/* ساعات التواجد */}
-                <col style={{ width: '8%' }} />   {/* الإجراءات */}
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>{locale === 'ar' ? 'الطالب' : 'Student'}</th>
-                  <th>{locale === 'ar' ? 'الصيدلية / الموقع' : 'Pharmacy / Location'}</th>
-                  <th>{t('statusLabel')}</th>
-                  <th>{locale === 'ar' ? 'شهر التدريب' : 'Month of Training'}</th>
-                  <th>{locale === 'ar' ? 'أيام التدريب' : 'Training Days'}</th>
-                  <th>{locale === 'ar' ? 'ساعات التواجد' : 'Attendance Hours'}</th>
-                  <th>{t('actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
-                      {locale === 'ar' ? 'لم يتم العثور على طلاب.' : 'No students found.'}
-                    </td>
-                  </tr>
-                ) : (
-                  filtered.map((s) => (
-                    <tr key={s._id}>
-                      <td style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--accent-dim)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.85rem', flexShrink: 0 }}>
-                            {s.userId?.profileImage
-                              ? <img src={s.userId.profileImage} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-                              : s.userId?.name?.charAt(0)}
-                          </div>
-                          <div>
-                            <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{s.userId?.name}</p>
-                          </div>
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+
+          {/* ── Header row (Only on Desktop) ── */}
+          {!isMobile && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '2.2fr 1.8fr 1.6fr 1.2fr 120px',
+              gap: 0,
+              padding: '10px 0',
+              borderBottom: '2px solid var(--border)',
+              background: 'var(--surface-alt, rgba(0,0,0,0.05))',
+            }}>
+              {[
+                locale === 'ar' ? 'الطالب' : 'Student',
+                locale === 'ar' ? 'الصيدلية / الموقع' : 'Pharmacy / Location',
+                locale === 'ar' ? 'أيام التدريب' : 'Training Days',
+                locale === 'ar' ? 'ساعات التواجد' : 'Attendance Hours',
+                locale === 'ar' ? 'الإجراءات' : 'Actions',
+              ].map((label, i) => (
+                <div key={i} style={{
+                  padding: '0 16px',
+                  fontSize: '0.7rem', fontWeight: 800,
+                  color: 'var(--text-muted)',
+                  textTransform: 'uppercase', letterSpacing: '0.06em',
+                }}>
+                  {label}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Empty state ── */}
+          {filtered.length === 0 ? (
+            <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🔍</div>
+              <p style={{ margin: 0, fontWeight: 600 }}>
+                {locale === 'ar' ? 'لم يتم العثور على طلاب.' : 'No students found.'}
+              </p>
+            </div>
+          ) : (
+            filtered.map((s, idx) => {
+              const isCompleted = s.status === 'completed';
+              const monthLabel = s.startDate ? (
+                s.startDate.includes('-07-') || s.startDate.endsWith('-07-01')
+                  ? (locale === 'ar' ? 'شهر السابع' : 'July')
+                  : s.startDate.includes('-08-') || s.startDate.endsWith('-08-01')
+                    ? (locale === 'ar' ? 'شهر الثامن' : 'August')
+                    : null
+              ) : null;
+              const initials = s.userId?.name ? s.userId.name.charAt(0).toUpperCase() : '?';
+              const statusColor = isCompleted ? '#6366f1' : '#22c55e';
+              const statusBg   = isCompleted ? 'rgba(99,102,241,0.12)' : 'rgba(34,197,94,0.12)';
+
+              if (isMobile) {
+                return (
+                  <div
+                    key={s._id}
+                    style={{
+                      padding: '16px',
+                      borderBottom: idx < filtered.length - 1 ? '1px solid var(--border)' : 'none',
+                      background: 'transparent',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12,
+                    }}
+                  >
+                    {/* Top row: Avatar + Identity + Actions */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                        {/* Avatar */}
+                        <div style={{
+                          width: 42, height: 42, borderRadius: 10, flexShrink: 0,
+                          background: statusBg, color: statusColor,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontWeight: 800, fontSize: '1.05rem',
+                          border: `2px solid ${statusColor}30`,
+                        }}>
+                          {s.userId?.profileImage ? (
+                            <img src={s.userId.profileImage} style={{ width: '100%', height: '100%', borderRadius: 10, objectFit: 'cover' }} />
+                          ) : (
+                            initials
+                          )}
                         </div>
-                      </td>
-                      <td className="text-sm" style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                        {s.locationId?.city || '—'}
-                        <br />
-                        <span className="text-muted text-xs">{s.pharmacyName || s.locationId?.name || '—'}</span>
-                      </td>
-                      <td>
-                        <span className={`badge badge-${s.status === 'completed' ? 'completed' : 'active'}`}>
-                          {s.status === 'completed' ? t('completedHours') : t('activeTraining')}
-                        </span>
-                      </td>
-                      <td className="text-xs text-muted">
-                        {s.startDate ? (
-                          s.startDate.includes('-07-') || s.startDate.endsWith('-07-01')
-                            ? (locale === 'ar' ? 'شهر السابع' : 'July')
-                            : s.startDate.includes('-08-') || s.startDate.endsWith('-08-01')
-                              ? (locale === 'ar' ? 'شهر الثامن' : 'August')
-                              : (locale === 'ar' ? 'غير محدد' : 'Not set')
-                        ) : (locale === 'ar' ? 'غير محدد' : 'Not set')}
-                      </td>
-                      {/* Training Days */}
-                      <td className="text-xs" style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                        {Array.isArray(s.trainingDays) && s.trainingDays.length > 0
-                          ? (s.trainingDays.length === 7
-                              ? (locale === 'ar' ? 'كل الأيام' : 'All Days')
-                              : s.trainingDays.map(d => ({
-                                  sunday:'الأحد',monday:'الاثنين',tuesday:'الثلاثاء',wednesday:'الأربعاء',thursday:'الخميس',friday:'الجمعة',saturday:'السبت',
-                                })[d] || d).join('، '))
-                          : '—'}
-                      </td>
-                      {/* Attendance Hours */}
-                      <td className="text-xs text-muted" style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                        {s.attendanceStart && s.attendanceEnd
-                          ? `${fmt12h(s.attendanceStart)} - ${fmt12h(s.attendanceEnd)}`
-                          : s.attendanceStart ? fmt12h(s.attendanceStart)
-                          : '—'}
-                      </td>
-                      <td>
+                        <div style={{ minWidth: 0 }}>
+                          {/* Name + Badges */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
+                            <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                              {s.userId?.name || '—'}
+                            </span>
+                            <span style={{
+                              fontSize: '10px', padding: '2px 8px', borderRadius: 99,
+                              fontWeight: 700, background: statusBg, color: statusColor,
+                            }}>
+                              {isCompleted ? (locale === 'ar' ? '🏁 مكتمل' : '🏁 Done') : (locale === 'ar' ? '✅ نشط' : '✅ Active')}
+                            </span>
+                            {monthLabel && (
+                              <span style={{
+                                fontSize: '10px', padding: '2px 8px', borderRadius: 99,
+                                fontWeight: 600, background: 'rgba(245,158,11,0.12)', color: '#f59e0b',
+                              }}>
+                                📅 {monthLabel}
+                              </span>
+                            )}
+                          </div>
+                          {/* Email */}
+                          <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {s.userId?.email}
+                          </p>
+                          {/* University */}
+                          {s.university && (
+                            <p style={{ margin: '3px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              🎓 {s.university}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div style={{ flexShrink: 0 }}>
                         {s.isVisited ? (
-                          /* Visited: clickable badge that opens read-only details */
                           <button
                             className="badge badge-success"
                             style={{
@@ -296,17 +398,10 @@ export default function TeacherStudents() {
                               borderRadius: 6,
                               fontWeight: 600,
                               fontSize: '0.78rem',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 4,
                             }}
                             onClick={() => openView(s)}
-                            title={locale === 'ar' ? 'عرض تفاصيل الزيارة' : 'View visit details'}
                           >
                             ✓ {locale === 'ar' ? 'تمت الزيارة' : 'Visited'}
-                            <span style={{ opacity: 0.7, fontSize: '0.7rem' }}>
-                              {locale === 'ar' ? '(عرض)' : '(view)'}
-                            </span>
                           </button>
                         ) : (
                           <button
@@ -316,15 +411,210 @@ export default function TeacherStudents() {
                             {locale === 'ar' ? '✅ زيارة' : '✅ Visit'}
                           </button>
                         )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    </div>
 
-        </>
+                    {/* Middle: Details Block */}
+                    <div style={{
+                      padding: '12px',
+                      background: 'var(--surface-alt, rgba(0,0,0,0.03))',
+                      borderRadius: 8,
+                      fontSize: '0.82rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 8,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, color: 'var(--text-primary)' }}>
+                        <span>🏥</span>
+                        <span>{s.pharmacyName || (locale === 'ar' ? 'غير مححدد' : 'Not set')}</span>
+                      </div>
+                      {s.locationId && (
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span>📍</span>
+                          <span>{s.locationId.city} — {s.locationId.name}</span>
+                        </div>
+                      )}
+                      {/* Training days */}
+                      {Array.isArray(s.trainingDays) && s.trainingDays.length > 0 && (
+                        <div style={{ fontSize: '0.76rem', color: 'var(--accent)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span>🗓️</span>
+                          <span>
+                            {s.trainingDays.length === 7
+                              ? (locale === 'ar' ? 'كل الأيام' : 'All Days')
+                              : s.trainingDays.map(d => ({
+                                  sunday: 'الأحد', monday: 'الاثنين', tuesday: 'الثلاثاء',
+                                  wednesday: 'الأربعاء', thursday: 'الخميس', friday: 'الجمعة', saturday: 'السبت',
+                                })[d] || d).join('، ')}
+                          </span>
+                        </div>
+                      )}
+                      {/* Attendance start/end */}
+                      {s.attendanceStart && (
+                        <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span>⏰</span>
+                          <span>
+                            {s.attendanceStart && s.attendanceEnd
+                              ? `${fmt12h(s.attendanceStart)} - ${fmt12h(s.attendanceEnd)}`
+                              : fmt12h(s.attendanceStart)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+
+              // Desktop view
+              return (
+                <div
+                  key={s._id}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '2.2fr 1.8fr 1.6fr 1.2fr 120px',
+                    gap: 0,
+                    borderBottom: idx < filtered.length - 1 ? '1px solid var(--border)' : 'none',
+                    background: 'transparent',
+                    transition: 'background 0.15s',
+                    alignItems: 'center',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  {/* Col 1: Student info */}
+                  <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                    <div style={{
+                      width: 42, height: 42, borderRadius: 10, flexShrink: 0,
+                      background: statusBg, color: statusColor,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontWeight: 800, fontSize: '1.05rem',
+                      border: `2px solid ${statusColor}30`,
+                    }}>
+                      {s.userId?.profileImage ? (
+                        <img src={s.userId.profileImage} style={{ width: '100%', height: '100%', borderRadius: 10, objectFit: 'cover' }} />
+                      ) : (
+                        initials
+                      )}
+                    </div>
+                    <div style={{ minWidth: 0, whiteSpace: 'normal', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 3 }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                          {s.userId?.name || '—'}
+                        </span>
+                        <span style={{
+                          fontSize: '10.5px', padding: '2px 8px', borderRadius: 99,
+                          fontWeight: 700, background: statusBg, color: statusColor,
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {isCompleted ? (locale === 'ar' ? '🏁 مكتمل' : '🏁 Done') : (locale === 'ar' ? '✅ نشط' : '✅ Active')}
+                        </span>
+                        {monthLabel && (
+                          <span style={{
+                            fontSize: '10.5px', padding: '2px 8px', borderRadius: 99,
+                            fontWeight: 600, background: 'rgba(245,158,11,0.12)', color: '#f59e0b',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            📅 {monthLabel}
+                          </span>
+                        )}
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
+                        {s.userId?.email}
+                      </p>
+                      {s.university && (
+                        <p style={{ margin: '3px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          🎓 {s.university}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Col 2: Pharmacy / Location */}
+                  <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'normal', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                      <span>🏥</span>
+                      <span>{s.pharmacyName || <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontStyle: 'italic' }}>{locale === 'ar' ? 'غير محدد' : 'Not set'}</span>}</span>
+                    </p>
+                    {s.locationId && (
+                      <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'normal', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                        <span>📍</span>
+                        <span>{s.locationId.city} — {s.locationId.name}</span>
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Col 3: Training days */}
+                  <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
+                    {Array.isArray(s.trainingDays) && s.trainingDays.length > 0 ? (
+                      <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--accent)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'normal', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                        <span>🗓️</span>
+                        <span>
+                          {s.trainingDays.length === 7
+                            ? (locale === 'ar' ? 'كل الأيام' : 'All Days')
+                            : s.trainingDays.map(d => ({
+                                sunday: 'الأحد', monday: 'الاثنين', tuesday: 'الثلاثاء',
+                                wednesday: 'الأربعاء', thursday: 'الخميس', friday: 'الجمعة', saturday: 'السبت',
+                              })[d] || d).join('، ')}
+                        </span>
+                      </p>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.82rem' }}>—</span>
+                    )}
+                  </div>
+
+                  {/* Col 4: Attendance hours */}
+                  <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
+                    {s.attendanceStart ? (
+                      <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'normal', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                        <span>⏰</span>
+                        <span>
+                          {s.attendanceStart && s.attendanceEnd
+                            ? `${fmt12h(s.attendanceStart)} - ${fmt12h(s.attendanceEnd)}`
+                            : fmt12h(s.attendanceStart)}
+                        </span>
+                      </p>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.82rem' }}>—</span>
+                    )}
+                  </div>
+
+                  {/* Col 5: Actions */}
+                  <div style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+                    {s.isVisited ? (
+                      <button
+                        className="badge badge-success"
+                        style={{
+                          padding: '6px 12px',
+                          cursor: 'pointer',
+                          border: 'none',
+                          background: 'var(--success-dim, rgba(34,197,94,0.15))',
+                          color: 'var(--success, #22c55e)',
+                          borderRadius: 6,
+                          fontWeight: 600,
+                          fontSize: '0.78rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                        onClick={() => openView(s)}
+                        title={locale === 'ar' ? 'عرض تفاصيل الزيارة' : 'View visit details'}
+                      >
+                        ✓ {locale === 'ar' ? 'تمت الزيارة' : 'Visited'}
+                      </button>
+                    ) : (
+                      <button
+                        className="btn btn-success btn-sm"
+                        onClick={() => openVisit(s)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      >
+                        {locale === 'ar' ? '✅ زيارة' : '✅ Visit'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       )}
 
       {/* ── Student Detail Modal (Visit or View mode) ── */}
