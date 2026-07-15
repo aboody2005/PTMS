@@ -105,6 +105,7 @@ const translations = {
     sideStudentData: 'Student Data',
     sideIncompleteData: 'Incomplete Data',
     sideGpsAudit: 'GPS Location Audit',
+    sideStudentNotes: 'Pharmacy Change Notes',
 
     // Student Distribution Page
     distribTeacher: 'Select Supervisor Teacher',
@@ -290,6 +291,7 @@ const translations = {
     sideStudentData: 'بيانات الطلبة',
     sideIncompleteData: 'البيانات الغير مكتملة',
     sideGpsAudit: 'تدقيق المواقع',
+    sideStudentNotes: 'ملاحظات الطلاب',
 
     // Student Distribution Page
     distribTeacher: 'اختر المشرف الأكاديمي',

@@ -33,6 +33,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
       { href: '/admin/visits/student-data', icon: '🎓', labelKey: 'sideStudentData' },
       { href: '/admin/visits/student-data/incomplete', icon: '⚠️', labelKey: 'sideIncompleteData', isChild: true },
       { href: '/admin/visits/student-data/gps-audit', icon: '📍', labelKey: 'sideGpsAudit', isChild: true },
+      { href: '/admin/visits/student-data/notes', icon: '📝', labelKey: 'sideStudentNotes', isChild: true },
       { href: '/admin/reports', icon: '📊', labelKey: 'sideReports' },
       { href: '/admin/profile', icon: '👤', labelKey: 'sideMyProfile' },
     ],
