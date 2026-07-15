@@ -202,8 +202,17 @@ export default function TeacherStudents() {
         <div className="flex-center" style={{ height: 200 }}><div className="spinner" /></div>
       ) : (
         <>
-          <div className="table-wrapper card" style={{ padding: 0 }}>
-            <table>
+          <div className="table-wrapper card" style={{ padding: 0, overflowX: 'auto' }}>
+            <table style={{ tableLayout: 'fixed', width: '100%', minWidth: '850px' }}>
+              <colgroup>
+                <col style={{ width: '20%' }} />   {/* الطالب */}
+                <col style={{ width: '22%' }} />  {/* الصيدلية / الموقع */}
+                <col style={{ width: '10%' }} />  {/* الحالة */}
+                <col style={{ width: '12%' }} />  {/* شهر التدريب */}
+                <col style={{ width: '16%' }} />  {/* أيام التدريب */}
+                <col style={{ width: '12%' }} />  {/* ساعات التواجد */}
+                <col style={{ width: '8%' }} />   {/* الإجراءات */}
+              </colgroup>
               <thead>
                 <tr>
                   <th>{locale === 'ar' ? 'الطالب' : 'Student'}</th>
@@ -218,14 +227,14 @@ export default function TeacherStudents() {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
                       {locale === 'ar' ? 'لم يتم العثور على طلاب.' : 'No students found.'}
                     </td>
                   </tr>
                 ) : (
                   filtered.map((s) => (
                     <tr key={s._id}>
-                      <td>
+                      <td style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--accent-dim)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.85rem', flexShrink: 0 }}>
                             {s.userId?.profileImage
@@ -237,7 +246,7 @@ export default function TeacherStudents() {
                           </div>
                         </div>
                       </td>
-                      <td className="text-sm">
+                      <td className="text-sm" style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
                         {s.locationId?.city || '—'}
                         <br />
                         <span className="text-muted text-xs">{s.pharmacyName || s.locationId?.name || '—'}</span>
@@ -257,7 +266,7 @@ export default function TeacherStudents() {
                         ) : (locale === 'ar' ? 'غير محدد' : 'Not set')}
                       </td>
                       {/* Training Days */}
-                      <td className="text-xs" style={{ whiteSpace: 'normal', wordBreak: 'break-word', maxWidth: 140 }}>
+                      <td className="text-xs" style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
                         {Array.isArray(s.trainingDays) && s.trainingDays.length > 0
                           ? (s.trainingDays.length === 7
                               ? (locale === 'ar' ? 'كل الأيام' : 'All Days')
@@ -267,7 +276,7 @@ export default function TeacherStudents() {
                           : '—'}
                       </td>
                       {/* Attendance Hours */}
-                      <td className="text-xs text-muted" style={{ whiteSpace: 'nowrap' }}>
+                      <td className="text-xs text-muted" style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
                         {s.attendanceStart && s.attendanceEnd
                           ? `${fmt12h(s.attendanceStart)} - ${fmt12h(s.attendanceEnd)}`
                           : s.attendanceStart ? fmt12h(s.attendanceStart)
